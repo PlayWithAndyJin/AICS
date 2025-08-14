@@ -109,25 +109,25 @@ export default function ChatInterface() {
     <div className="gradient-border overflow-hidden">
       <div className="bg-white dark:bg-black">
         {/* 聊天消息区域 */}
-        <div className="h-[50vh] md:h-[60vh] lg:h-[65vh] overflow-y-auto p-6 space-y-6 bg-gray-50 dark:bg-gray-900">
+        <div className="h-[calc(100vh-14rem)] sm:h-[50vh] md:h-[60vh] lg:h-[65vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 dark:bg-gray-900 pt-20 sm:pt-24 lg:pt-28">
           {messages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="relative mb-6">
-                <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center mx-auto animate-float">
-                  <svg className="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="text-center py-8 sm:py-12">
+              <div className="relative mb-4 sm:mb-6">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 bg-blue-100 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center mx-auto animate-float">
+                  <svg className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">您好！我是小Mo，您的AI客服助手</h3>
-              <p className="text-gray-600 dark:text-gray-300 text-lg mb-6">基于通义千问技术，配合自有知识库为您提供专业、智能的客户服务支持。</p>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-2 sm:mb-3">您好！我是小Mo，您的AI客服助手</h3>
+              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 mb-4 sm:mb-6 px-4">基于通义千问技术，配合自有知识库为您提供专业、智能的客户服务支持。</p>
               
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">你可以输入‘小Mo，小Mo'试试</p>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">你可以输入'小Mo，小Mo'试试</p>
             </div>
           ) : (
             messages.map((message) => (
@@ -136,23 +136,23 @@ export default function ChatInterface() {
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`flex items-start space-x-3 ${
+                  className={`flex items-start space-x-2 sm:space-x-3 ${
                     message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
                   }`}
                 >
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                       message.role === 'user'
                         ? 'bg-blue-600 text-white shadow-lg'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600'
                     }`}
                   >
                     {message.role === 'user' ? (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     ) : (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                     )}
@@ -205,9 +205,9 @@ export default function ChatInterface() {
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center border border-gray-200 dark:border-gray-600">
-                  <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-start space-x-2 sm:space-x-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
@@ -235,8 +235,8 @@ export default function ChatInterface() {
         </div>
 
         {/* 输入区域 */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-900">
-          <form onSubmit={handleSubmit} className="flex space-x-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
+          <form onSubmit={handleSubmit} className="flex space-x-3 sm:space-x-4">
             <div className="flex-1 relative">
               <textarea
                 value={input}
@@ -265,7 +265,7 @@ export default function ChatInterface() {
           </form>
           
           {/* 输入提示 */}
-          <div className="mt-3 text-center">
+          <div className="mt-2 sm:mt-3 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               按 Enter 发送消息，Shift + Enter 换行
             </p>
