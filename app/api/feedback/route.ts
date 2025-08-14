@@ -69,13 +69,9 @@ export async function POST(req: Request) {
           <div style="margin: 20px 0;">
             <h3 style="color: #555; margin-bottom: 10px;">反馈详情</h3>
             <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9; font-weight: bold; width: 120px;">姓名：</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${name}</td>
-              </tr>
               ${name ? `
               <tr>
-                <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9; font-weight: bold;">姓名：</td>
+                <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9; font-weight: bold; width: 120px;">姓名：</td>
                 <td style="padding: 8px; border: 1px solid #ddd;">${name}</td>
               </tr>
               ` : ''}
