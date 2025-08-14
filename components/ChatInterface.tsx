@@ -106,34 +106,8 @@ export default function ChatInterface() {
   return (
     <div className="gradient-border overflow-hidden">
       <div className="bg-white dark:bg-black">
-        {/* 聊天头部 */}
-        <div className="relative bg-blue-600 px-8 py-6 overflow-hidden">
-          {/* 背景装饰 */}
-          <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-          
-          <div className="relative flex items-center space-x-4">
-            <div className="relative">
-              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center border border-white/30">
-                <img src="/MyBlog.png" alt="logo" className="w-10 h-10 object-contain" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
-            </div>
-            <div>
-              <h2 className="text-white font-bold text-2xl mb-1">小Mo · AI客服助手</h2>
-              <p className="text-white/90 text-sm font-medium">通义千问驱动 · 24/7 智能支持</p>
-            </div>
-            
-            {/* 状态指示器 */}
-            <div className="ml-auto flex items-center space-x-2 px-4 py-2 bg-white/20 rounded-full border border-white/30">
-              <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
-              <span className="text-white text-sm font-medium">在线</span>
-            </div>
-          </div>
-        </div>
-
         {/* 聊天消息区域 */}
-        <div className="h-96 overflow-y-auto p-6 space-y-6 bg-gray-50 dark:bg-gray-900">
+        <div className="h-[50vh] md:h-[60vh] lg:h-[65vh] overflow-y-auto p-6 space-y-6 bg-gray-50 dark:bg-gray-900">
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <div className="relative mb-6">
