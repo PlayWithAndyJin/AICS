@@ -77,9 +77,9 @@ export default function Header() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-                智能客服系统
+                小Mo · AI客服助手
               </h1>
-              <p className="text-sm text-gray-600 dark:text-white font-medium">AI驱动的客户服务解决方案</p>
+                              <p className="text-sm text-gray-600 dark:text-white font-medium">通义千问驱动 · 24/7 智能支持</p>
             </div>
           </div>
 
@@ -90,7 +90,7 @@ export default function Header() {
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-green-700 dark:text-green-400">在线服务</span>
             </div>
-
+            <a href="https://www.andyjin.website" target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">返回主页</a>
             {/* 主题切换按钮 */}
             <button
               onClick={toggleTheme}
