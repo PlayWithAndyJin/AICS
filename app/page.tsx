@@ -15,7 +15,7 @@ export default function Home() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-300/10 to-purple-300/10 rounded-full blur-3xl animate-pulse-slow"></div>
       </div>
       
-      <div className="container mx-auto px-4 py-8 pt-24">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 pt-20 sm:pt-24">
         <div className="max-w-6xl mx-auto">
           {/* 聊天界面 */}
           <ChatInterface />
