@@ -109,7 +109,7 @@ export default function ChatInterface() {
     <div className="gradient-border overflow-hidden">
       <div className="bg-white dark:bg-black">
         {/* 聊天消息区域 */}
-        <div className="h-[calc(100vh-14rem)] sm:h-[50vh] md:h-[60vh] lg:h-[65vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 dark:bg-gray-900 pt-20 sm:pt-24 lg:pt-28">
+        <div className="h-[calc(100vh-14rem)] sm:h-[50vh] md:h-[60vh] lg:h-[65vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 dark:bg-gray-900 pt-16 sm:pt-20 lg:pt-24">
           {messages.length === 0 ? (
             <div className="text-center py-8 sm:py-12">
               <div className="relative mb-4 sm:mb-6">
@@ -265,9 +265,12 @@ export default function ChatInterface() {
           </form>
           
           {/* 输入提示 */}
-          <div className="mt-2 sm:mt-3 text-center">
+          <div className="mt-1 sm:mt-2 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               按 Enter 发送消息，Shift + Enter 换行
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              Built By AndyJin
             </p>
           </div>
         </div>
