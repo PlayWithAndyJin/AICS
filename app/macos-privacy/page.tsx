@@ -208,7 +208,7 @@ export default function MacOSPrivacyPage() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <ul className="space-y-2 text-gray-700">
                   <li>• 邮箱：2358155969@qq.com</li>
-                  <li>• 在线客服：应用内反馈功能</li>
+                  <li>• 应用内反馈渠道：'关于'->'帮助'->'建议与反馈'</li>
                 </ul>
               </div>
             </section>
