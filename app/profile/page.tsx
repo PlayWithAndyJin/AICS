@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import KeyManagerModal from '@/components/KeyManagerModal'
 import { useUser } from '@/contexts/UserContext'
+import ProfileFooter from '@/components/ProfileFooter'
 
 export default function ProfilePage() {
   const { user, isLoggedIn, login, logout } = useUser()
@@ -330,6 +331,8 @@ export default function ProfilePage() {
         onClose={() => setIsKeyModalOpen(false)}
         userId={user?.userId || ''}
       />
+
+      <ProfileFooter />
     </div>
   )
 } 
