@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [showUserDetails, setShowUserDetails] = useState(false)
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const router = useRouter()
 
 
@@ -289,13 +290,21 @@ export default function ProfilePage() {
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">密钥管家</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">通过独立密钥调用用户存储的所有密钥，实现安全统一管理</p>
                   </div>
-                  <button 
-                    onClick={() => setIsKeyModalOpen(true)}
-                    disabled={!user?.userId}
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                  >
-                    管理
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button 
+                      onClick={() => setIsKeyModalOpen(true)}
+                      disabled={!user?.userId}
+                      className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    >
+                      管理
+                    </button>
+                    <button
+                      onClick={() => setShowPrivacyModal(true)}
+                      className="px-4 py-2 bg-white/70 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-white/90 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+                    >
+                      隐私协议
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -331,6 +340,52 @@ export default function ProfilePage() {
         onClose={() => setIsKeyModalOpen(false)}
         userId={user?.userId || ''}
       />
+
+      {/* 隐私协议弹窗 */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">密钥管家隐私协议</h3>
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                aria-label="关闭"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto space-y-4 text-sm text-gray-700 dark:text-gray-300">
+              <p>
+                为保障您的数据安全与隐私，我们对“密钥管家”功能的数据处理方式做出如下说明：
+              </p>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>我们仅在提供 MyBlog 与 Modern Blog 移动应用中的 AI 服务所必需的范围内收集与使用您提供的信息。</li>
+                <li>我们会对您提供的 API Key 进行加密存储，不以明文保存与传输。</li>
+                <li>当您从客户端请求密钥管家存储的数据时，我们会进行必要的身份核验，确保仅密钥所有者可以获取其数据。</li>
+                <li>您的 API Key 仅用于为您提供密钥代管与调用相关功能，不会对外展示。</li>
+                <li>除法律法规另有规定或取得您的授权外，我们不会对外提供您的个人信息。</li>
+                <li>您可以随时更新或删除任意品牌的 API Key；删除账户将同步删除相关密钥记录。</li>
+                <li>我们会在实现功能所需且符合法律要求的期限内保存您的信息，并在超过期限后及时删除或匿名化处理。</li>
+                <li>请妥善保管与账户相关的凭据，不要在公共环境中泄露。</li>
+              </ul>
+              <p>
+                如您继续使用“密钥管家”，即表示您已阅读并同意本隐私说明。
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              >
+                我已了解
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ProfileFooter />
     </div>
