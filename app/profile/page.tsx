@@ -86,10 +86,10 @@ export default function ProfilePage() {
                 href="https://www.andyjin.website" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center px-2 py-2 sm:px-3 sm:py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors text-sm ml-1 sm:ml-2"
+                className="hidden sm:inline-flex items-center justify-center px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors text-sm ml-2"
                 title="返回首页"
               >
-                <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
                 <span className="hidden sm:inline ml-2">返回首页</span>
@@ -121,6 +121,19 @@ export default function ProfilePage() {
                   {showUserDetails && (
                     <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50">
                       <div className="p-6">
+                        <a
+                          href="https://www.andyjin.website"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="sm:hidden mb-4 inline-flex items-center px-3 py-2 rounded-lg border border-gray-200/60 dark:border-gray-700/60 bg-white/70 dark:bg-gray-700/40 text-gray-800 dark:text-gray-200 hover:bg-white/90 dark:hover:bg-gray-700 transition-colors text-sm"
+                          title="返回首页"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                          返回首页
+                        </a>
+
                         {/* 用户基本信息 */}
                         <div className="flex items-center space-x-4 mb-6">
                           <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
