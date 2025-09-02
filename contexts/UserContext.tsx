@@ -26,6 +26,11 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
+const USERS_API_KEY = process.env.NEXT_PUBLIC_USERS_API_KEY as string
+if (!USERS_API_KEY) {
+  console.warn('Missing NEXT_PUBLIC_USERS_API_KEY environment variable')
+}
+
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -54,7 +59,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'myblogjxx334128!'
+          'X-API-Key': USERS_API_KEY
         },
         body: JSON.stringify({
           userId: userId.trim(),
