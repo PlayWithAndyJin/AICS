@@ -1,18 +1,32 @@
 import { Pool } from 'pg'
 
-// 数据库连接配置
-const dbConfig = {
-  host: 'dbconn.sealosbja.site',
-  port: 37437,
-  user: 'postgres',
-  password: 'tf78qpfs',
-  database: 'postgres',
-  ssl: false,
-  directConnection: true
-}
+const {
+  DATABASE_URL,
+  PGHOST,
+  PGPORT,
+  PGUSER,
+  PGPASSWORD,
+  PGDATABASE,
+  PGSSL
+} = process.env
 
-// 创建连接池
-const pool = new Pool(dbConfig)
+let pool: Pool
+
+if (DATABASE_URL) {
+  pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: PGSSL === 'true' ? { rejectUnauthorized: false } : undefined
+  })
+} else {
+  pool = new Pool({
+    host: PGHOST,
+    port: PGPORT ? parseInt(PGPORT, 10) : undefined,
+    user: PGUSER,
+    password: PGPASSWORD,
+    database: PGDATABASE,
+    ssl: PGSSL === 'true' ? { rejectUnauthorized: false } : undefined
+  } as any)
+}
 
 // 测试连接
 pool.on('connect', () => {
