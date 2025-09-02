@@ -81,93 +81,107 @@ export default function ProfilePage() {
             <div>
               <h1 className="text-xl font-bold">个人中心</h1>
             </div>
-            {isLoggedIn && user && (
-              <div className="relative">
-                <button
-                  onClick={toggleUserDetails}
-                  className="flex items-center space-x-3 hover:bg-white/10 rounded-lg px-3 py-2 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold">{user.username.charAt(0)}</span>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold">欢迎回来，{user.username}</p>
-                    <p className="text-xs opacity-80">用户ID: {user.userId}</p>
-                  </div>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${showUserDetails ? 'rotate-180' : ''}`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
+            <div className="flex items-center space-x-3">
+              <a 
+                href="https://www.andyjin.website" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-2 py-2 sm:px-3 sm:py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors text-sm ml-1 sm:ml-2"
+                title="返回首页"
+              >
+                <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span className="hidden sm:inline ml-2">返回首页</span>
+              </a>
+              {isLoggedIn && user && (
+                <div className="relative">
+                  <button
+                    onClick={toggleUserDetails}
+                    className="flex items-center space-x-3 hover:bg-white/10 rounded-lg px-3 py-2 transition-colors"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-semibold">{user.username.charAt(0)}</span>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold">欢迎回来，{user.username}</p>
+                      <p className="text-xs opacity-80">用户ID: {user.userId}</p>
+                    </div>
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${showUserDetails ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
 
-                {/* 用户详细信息下拉面板 */}
-                {showUserDetails && (
-                  <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50">
-                    <div className="p-6">
-                      {/* 用户基本信息 */}
-                      <div className="flex items-center space-x-4 mb-6">
-                        <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                          {user.username.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{user.username}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
-                        </div>
-                      </div>
-
-                      {/* 详细信息列表 */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">用户ID</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">{user.userId}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">当前版本</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">{user.currentVersion}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">账户状态</span>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            user.status === 'active' 
-                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
-                              : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                          }`}>
-                            {user.status === 'active' ? '活跃' : '非活跃'}
-                          </span>
+                  {/* 用户详细信息下拉面板 */}
+                  {showUserDetails && (
+                    <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                      <div className="p-6">
+                        {/* 用户基本信息 */}
+                        <div className="flex items-center space-x-4 mb-6">
+                          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                            {user.username.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{user.username}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                          </div>
                         </div>
 
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">最后登录</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-CN') : '未知'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">注册时间</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.createdAt ? new Date(user.createdAt).toLocaleString('zh-CN') : '未知'}
-                          </span>
-                        </div>
-                      </div>
+                        {/* 详细信息列表 */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">用户ID</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{user.userId}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">当前版本</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{user.currentVersion}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">账户状态</span>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              user.status === 'active' 
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                            }`}>
+                              {user.status === 'active' ? '活跃' : '非活跃'}
+                            </span>
+                          </div>
 
-                      {/* 退出登录按钮 */}
-                      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
-                        <button
-                          onClick={handleLogout}
-                          className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-                        >
-                          退出登录
-                        </button>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">最后登录</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-CN') : '未知'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center py-2">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">注册时间</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {user.createdAt ? new Date(user.createdAt).toLocaleString('zh-CN') : '未知'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 退出登录按钮 */}
+                        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                          <button
+                            onClick={handleLogout}
+                            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                          >
+                            退出登录
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
