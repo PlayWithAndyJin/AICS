@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [showUserDetails, setShowUserDetails] = useState(false)
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [isNewFeatureOpen, setIsNewFeatureOpen] = useState(false)
   const router = useRouter()
 
   // 检查是否使用新认证系统
@@ -425,13 +426,38 @@ export default function ProfilePage() {
                     </button>
                   </form>
 
-                  <div className="mt-4">
-                    <Link
-                      href="/auth"
-                      className="w-full inline-flex items-center justify-center bg-white text-blue-600 py-3 px-4 rounded-xl border border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium text-lg"
-                    >
-                      前往新版登录/注册
-                    </Link>
+                  {/* 新版引导卡片（小巧简洁） */}
+                  <div className="mt-6 rounded-2xl border border-white/30 bg-white/60 dark:bg-white/5 backdrop-blur p-5 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0 h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">新版登录已上线</h3>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsNewFeatureOpen(true)}
+                              className="inline-flex items-center rounded-lg bg-white text-blue-600 px-3 py-1.5 text-xs font-medium border border-blue-200 hover:bg-blue-50 dark:bg-transparent dark:text-blue-300 dark:border-blue-500/40 dark:hover:bg-blue-500/10 transition"
+                            >
+                              了解新版特性
+                            </button>
+                            <Link
+                              href="/auth"
+                              className="inline-flex items-center rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-medium hover:bg-blue-700 transition"
+                            >
+                              前往新版
+                            </Link>
+                          </div>
+                        </div>
+                        <p className="mt-1.5 text-xs leading-5 text-gray-600 dark:text-gray-300">
+                          更佳视觉体验，建议使用新版登录。
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -541,6 +567,58 @@ export default function ProfilePage() {
               <button
                 onClick={() => setShowPrivacyModal(false)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              >
+                我已了解
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 新版特性弹窗 */}
+      {isNewFeatureOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsNewFeatureOpen(false)} />
+          <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">新版特性</h3>
+              <button
+                type="button"
+                onClick={() => setIsNewFeatureOpen(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 text-sm text-gray-700 dark:text-gray-200 space-y-3">
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
+                <p>支持在网页端注册账号，流程清晰，上手更快</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
+                <p>更安全的注册与登录机制，显著降低用户数据泄露风险</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
+                <p>注册时可设置用户名、密码与邮箱，扩展用户信息维度</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
+                <p>不记录邮箱、密码等敏感信息；所有关键数据均加密存储</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
+                <p>更佳的视觉与交互体验，整体操作更顺畅</p>
+              </div>
+            </div>
+            <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsNewFeatureOpen(false)}
+                className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700"
               >
                 我已了解
               </button>
