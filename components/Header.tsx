@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useUser } from '@/contexts/UserContext'
+import { performLogout, isNewAuthSystem } from '@/lib/auth'
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -81,9 +82,20 @@ export default function Header() {
     }
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    const result = await performLogout()
+    
+    // 如果是旧认证系统，还需要调用 context 的 logout 函数
+    if (!isNewAuthSystem()) {
+      logout()
+    }
+    
     setShowUserMenu(false)
+    
+    // 可选：显示退出登录结果消息
+    if (result.message) {
+      console.log(result.message)
+    }
   }
 
 
