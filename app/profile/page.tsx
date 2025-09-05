@@ -42,6 +42,11 @@ export default function ProfilePage() {
     
     if (accessToken && refreshToken) {
       setupTokenStatusCheck()
+
+      // 确保网页端仅单设备在线
+      import('@/lib/deviceManager')
+        .then(m => m.enforceSingleWebSession())
+        .catch(() => {})
       
       if (savedUser) {
         try {
@@ -149,6 +154,71 @@ export default function ProfilePage() {
   const toggleUserDetails = () => {
     setShowUserDetails(!showUserDetails)
   }
+
+  useEffect(() => {
+    const check = async () => {
+      await fetchUserInfo()
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') check()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    // 首次进入也校验一次
+    check()
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
+  useEffect(() => {
+    const getBrowserName = () => {
+      if (typeof navigator === 'undefined') return 'web'
+      const ua = navigator.userAgent
+      if (/edg/i.test(ua)) return 'Edge'
+      if (/opr|opera/i.test(ua)) return 'Opera'
+      if (/chrome|crios/i.test(ua)) return 'Chrome'
+      if (/firefox|fxios/i.test(ua)) return 'Firefox'
+      if (/safari/i.test(ua)) return 'Safari'
+      return 'Browser'
+    }
+    const deviceId = getBrowserName()
+
+    const logoutAndRedirect = () => {
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      router.replace('/auth')
+    }
+    let timer: number | undefined
+    const checkOnline = async () => {
+      const token = localStorage.getItem('accessToken')
+      if (!token) return
+      try {
+        const res = await fetch('/api/auth/devices', {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (!res.ok) {
+          if (res.status === 401) logoutAndRedirect()
+          return
+        }
+        const data = await res.json()
+        const online = Array.isArray(data?.devices) && data.devices.some((d: any) => d.deviceId === deviceId)
+        if (!online) logoutAndRedirect()
+      } catch {
+      }
+    }
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') checkOnline()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    checkOnline()
+    timer = window.setInterval(checkOnline, 15000)
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      if (timer) window.clearInterval(timer)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
