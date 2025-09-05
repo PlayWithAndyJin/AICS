@@ -67,22 +67,32 @@ export function getValidAccessToken(): string | null {
   return accessToken
 }
 
-/**
- * 获取用户信息
- */
+function getBrowserName(): string {
+  try {
+    if (typeof navigator === 'undefined') return 'web'
+    const ua = navigator.userAgent
+    if (/edg/i.test(ua)) return 'Edge'
+    if (/opr|opera/i.test(ua)) return 'Opera'
+    if (/chrome|crios/i.test(ua)) return 'Chrome'
+    if (/firefox|fxios/i.test(ua)) return 'Firefox'
+    if (/safari/i.test(ua)) return 'Safari'
+    return 'Browser'
+  } catch {
+    return 'Browser'
+  }
+}
+
 export async function fetchUserInfo(): Promise<UserData | null> {
   const accessToken = getValidAccessToken()
-  
-  if (!accessToken) {
-    return null
-  }
+  if (!accessToken) return null
 
   try {
     const response = await fetch('/api/auth/me', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Device-Id': getBrowserName()
       }
     })
 
@@ -90,19 +100,21 @@ export async function fetchUserInfo(): Promise<UserData | null> {
       const userData = await response.json()
       localStorage.setItem('user', JSON.stringify(userData))
       return userData
-    } else if (response.status === 401) {
+    }
+
+    if (response.status === 401) {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
-      return null
-    } else {
+      if (typeof window !== 'undefined') window.location.href = '/auth'
       return null
     }
-  } catch (error) {
+
+    return null
+  } catch {
     return null
   }
 }
-
 /**
  * 检查token状态并显示警告
  */
@@ -122,7 +134,7 @@ export function checkTokenStatus(): { isValid: boolean; expiresIn?: number } {
       const payload = JSON.parse(atob(accessToken.split('.')[1]))
       const exp = payload.exp * 1000
       const now = Date.now()
-      const expiresIn = Math.floor((exp - now) / 1000 / 60) // 剩余分钟数
+      const expiresIn = Math.floor((exp - now) / 1000 / 60)
       
       return { isValid: true, expiresIn }
     } catch (error) {
@@ -145,3 +157,4 @@ export function setupTokenStatusCheck(): void {
     }
   }, 5 * 60 * 1000)
 }
+
