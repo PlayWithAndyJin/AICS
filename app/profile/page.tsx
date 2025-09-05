@@ -5,9 +5,26 @@ import { useRouter } from 'next/navigation'
 import KeyManagerModal from '@/components/KeyManagerModal'
 import { useUser } from '@/contexts/UserContext'
 import ProfileFooter from '@/components/ProfileFooter'
+import Link from 'next/link'
+import { performLogout, isNewAuthSystem } from '@/lib/auth'
+import { fetchUserInfo, setupTokenStatusCheck } from '@/lib/tokenManager'
+
+// 新认证系统的用户数据类型
+interface NewAuthUser {
+  userId: string
+  email: string | null
+  username: string
+  status: string
+  metadata: any
+  lastLoginAt: string
+  createdAt: string
+  updatedAt: string
+}
 
 export default function ProfilePage() {
   const { user, isLoggedIn, login, logout } = useUser()
+  const [newAuthUser, setNewAuthUser] = useState<NewAuthUser | null>(null)
+  const [isNewAuth, setIsNewAuth] = useState(false)
   const [userId, setUserId] = useState('')
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -17,8 +34,57 @@ export default function ProfilePage() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const router = useRouter()
 
+  // 检查是否使用新认证系统
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken')
+    const refreshToken = localStorage.getItem('refreshToken')
+    const savedUser = localStorage.getItem('user')
+    
+    if (accessToken && refreshToken) {
+      setupTokenStatusCheck()
+      
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser)
+          setNewAuthUser(userData)
+          setIsNewAuth(true)
+        } catch (e) {}      
+      } else {
+        fetchUserInfo().then(userData => {
+          if (userData) {
+            setNewAuthUser(userData)
+            setIsNewAuth(true)
+          }
+        })
+      }
+    }
+  }, [])
 
+  // 获取当前显示的用户信息
+  const getCurrentUser = () => {
+    if (isNewAuth && newAuthUser) {
+      return {
+        username: newAuthUser.username,
+        email: newAuthUser.email,
+        userId: newAuthUser.userId,
+        status: newAuthUser.status,
+        lastLoginAt: newAuthUser.lastLoginAt,
+        createdAt: newAuthUser.createdAt,
+        currentVersion: 'N/A' // 新系统没有这个字段
+      }
+    }
+    return user
+  }
 
+  // 检查是否已登录（支持新旧系统）
+  const checkLoginStatus = () => {
+    const result = isNewAuth && newAuthUser ? true : isLoggedIn
+    return result
+  }
+
+  const isUserLoggedIn = checkLoginStatus()
+
+  const currentUser = getCurrentUser()
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!userId.trim() || !email.trim()) {
@@ -49,17 +115,34 @@ export default function ProfilePage() {
     }
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    const result = await performLogout()
+    
+    // 如果是新认证系统，更新本地状态
+    if (isNewAuthSystem()) {
+      setNewAuthUser(null)
+      setIsNewAuth(false)
+    } else {
+      // 旧系统登出
+      logout()
+    }
+    
     setUserId('')
     setEmail('')
     setShowUserDetails(false)
+    
+    
+    // 可选：显示退出登录结果消息
+    if (result.message) {
+    }
+    
+    setTimeout(() => {
+      router.push("/auth")
+    }, 500)    // 退出登录成功后跳转到登录页面
   }
 
   const clearCache = () => {
-    // 清除所有本地存储
     localStorage.clear()
-    // 刷新页面
     window.location.reload()
   }
 
@@ -85,7 +168,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center space-x-3">
               <a 
-                href="https://www.andyjin.website" 
+                href="https://www.andyjin.website"
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hidden sm:inline-flex items-center justify-center px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors text-sm ml-2"
@@ -96,18 +179,18 @@ export default function ProfilePage() {
                 </svg>
                 <span className="hidden sm:inline ml-2">返回首页</span>
               </a>
-              {isLoggedIn && user && (
+              {isUserLoggedIn && currentUser && (
                 <div className="relative">
                   <button
                     onClick={toggleUserDetails}
                     className="flex items-center space-x-3 hover:bg-white/10 rounded-lg px-3 py-2 transition-colors"
                   >
                     <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-semibold">{user.username.charAt(0)}</span>
+                      <span className="text-sm font-semibold">{currentUser.username.charAt(0)}</span>
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-semibold">欢迎回来，{user.username}</p>
-                      <p className="text-xs opacity-80">用户ID: {user.userId}</p>
+                      <p className="text-sm font-semibold">欢迎回来，{currentUser.username}</p>
+                      <p className="text-xs opacity-80">用户ID: {currentUser.userId}</p>
                     </div>
                     <svg 
                       className={`w-4 h-4 transition-transform ${showUserDetails ? 'rotate-180' : ''}`} 
@@ -139,11 +222,11 @@ export default function ProfilePage() {
                         {/* 用户基本信息 */}
                         <div className="flex items-center space-x-4 mb-6">
                           <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                            {user.username.charAt(0)}
+                            {currentUser.username.charAt(0)}
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{user.username}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{currentUser.username}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{currentUser.email}</p>
                           </div>
                         </div>
 
@@ -151,33 +234,33 @@ export default function ProfilePage() {
                         <div className="space-y-3">
                           <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
                             <span className="text-sm text-gray-600 dark:text-gray-400">用户ID</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">{user.userId}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{currentUser.userId}</span>
                           </div>
                           <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
                             <span className="text-sm text-gray-600 dark:text-gray-400">当前版本</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">{user.currentVersion}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{currentUser.currentVersion}</span>
                           </div>
                           <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
                             <span className="text-sm text-gray-600 dark:text-gray-400">账户状态</span>
                             <span className={`px-2 py-1 rounded-full text-xs ${
-                              user.status === 'active' 
+                              currentUser.status === 'active' 
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
                                 : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
                             }`}>
-                              {user.status === 'active' ? '活跃' : '非活跃'}
+                              {currentUser.status === 'active' ? '活跃' : '非活跃'}
                             </span>
                           </div>
 
                           <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
                             <span className="text-sm text-gray-600 dark:text-gray-400">最后登录</span>
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-CN') : '未知'}
+                              {currentUser.lastLoginAt ? new Date(currentUser.lastLoginAt).toLocaleString('zh-CN') : '未知'}
                             </span>
                           </div>
                           <div className="flex justify-between items-center py-2">
                             <span className="text-sm text-gray-600 dark:text-gray-400">注册时间</span>
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {user.createdAt ? new Date(user.createdAt).toLocaleString('zh-CN') : '未知'}
+                              {currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleString('zh-CN') : '未知'}
                             </span>
                           </div>
                         </div>
@@ -201,7 +284,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex-1 p-6 max-w-4xl mx-auto w-full">
-          {!isLoggedIn ? (
+          {!isUserLoggedIn ? (
             /* 登录页面 */
             <div className="flex items-center justify-center min-h-[70vh]">
               <div className="w-full max-w-md">
@@ -271,6 +354,15 @@ export default function ProfilePage() {
                       )}
                     </button>
                   </form>
+
+                  <div className="mt-4">
+                    <Link
+                      href="/auth"
+                      className="w-full inline-flex items-center justify-center bg-white text-blue-600 py-3 px-4 rounded-xl border border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium text-lg"
+                    >
+                      前往新版登录/注册
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -293,7 +385,7 @@ export default function ProfilePage() {
                   <div className="flex items-center space-x-2">
                     <button 
                       onClick={() => setIsKeyModalOpen(true)}
-                      disabled={!user?.userId}
+                      disabled={!currentUser?.userId}
                       className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                     >
                       管理
@@ -338,7 +430,7 @@ export default function ProfilePage() {
       <KeyManagerModal
         isOpen={isKeyModalOpen}
         onClose={() => setIsKeyModalOpen(false)}
-        userId={user?.userId || ''}
+        userId={currentUser?.userId || ''}
       />
 
       {/* 隐私协议弹窗 */}
