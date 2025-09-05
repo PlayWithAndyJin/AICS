@@ -18,6 +18,7 @@ export default function AuthPage() {
   const [showPasswordRegister, setShowPasswordRegister] = useState(false)
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false)
   const [isContactOpen, setIsContactOpen] = useState(false)
+  const [isUnsupportedOpen, setIsUnsupportedOpen] = useState(false)
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -200,7 +201,7 @@ export default function AuthPage() {
                     <p>更佳的视觉与交互体验，整体操作更顺畅</p>
                   </div>
                 </div>
-                <div className="mt-10">
+                <div className="mt-10 flex gap-3">
                   <button
                     onClick={() => router.push('/profile')}
                     className="group inline-flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-rose-600 text-white text-sm shadow-lg transition-all hover:shadow-xl hover:translate-y-[-1px] active:translate-y-0"
@@ -209,6 +210,13 @@ export default function AuthPage() {
                     <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsUnsupportedOpen(true)}
+                    className="inline-flex items-center px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-900/50 text-gray-800 dark:text-gray-100 text-sm border border-gray-200/70 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-all hover:translate-y-[-1px]"
+                  >
+                    查看暂不支持的功能
                   </button>
                 </div>
               </div>
@@ -379,7 +387,7 @@ export default function AuthPage() {
                             </svg>
                           ) : (
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 06 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                           )}
@@ -504,6 +512,36 @@ export default function AuthPage() {
               </div>
               <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                 <button onClick={() => setIsContactOpen(false)} className="px-4 py-2 rounded-lg bg-violet-600 text-white hover:bg-violet-700">关闭</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 暂不支持功能弹窗 */}
+        {isUnsupportedOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setIsUnsupportedOpen(false)}></div>
+            <div className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">当前暂不支持的功能</h3>
+                <button onClick={() => setIsUnsupportedOpen(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="px-5 py-4 text-sm text-gray-700 dark:text-gray-200 space-y-3">
+                <div className="flex items-start gap-2">
+                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-rose-600" />
+                  <p>网页端不支持显示用户头像</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  <p>不支持使用密钥管家功能（待移动端上线该功能时网页端将支持）</p>
+                </div>
+              </div>
+              <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                <button onClick={() => setIsUnsupportedOpen(false)} className="px-4 py-2 rounded-lg bg-violet-600 text-white hover:bg-violet-700">我已了解</button>
               </div>
             </div>
           </div>
