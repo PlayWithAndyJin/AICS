@@ -31,10 +31,26 @@ export default function AuthPage() {
 
     setIsLoading(true)
     try {
+      const getBrowserName = () => {
+        if (typeof navigator === 'undefined') return 'web'
+        const ua = navigator.userAgent
+        if (/edg/i.test(ua)) return 'Edge'
+        if (/opr|opera/i.test(ua)) return 'Opera'
+        if (/chrome|crios/i.test(ua)) return 'Chrome'
+        if (/firefox|fxios/i.test(ua)) return 'Firefox'
+        if (/safari/i.test(ua)) return 'Safari'
+        return 'Browser'
+      }
+      const deviceId = getBrowserName()
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: identifier.trim(), password: password.trim() })
+        body: JSON.stringify({
+          identifier: identifier.trim(),
+          password: password.trim(),
+          deviceId
+        })
       })
       const data = await res.json()
       if (!res.ok) {
@@ -44,8 +60,13 @@ export default function AuthPage() {
       localStorage.setItem('accessToken', data.accessToken)
       localStorage.setItem('refreshToken', data.refreshToken)
 
-      // 使用新的token管理工具获取用户信息
       const userData = await fetchUserInfo()
+
+      // 强制网页端仅单设备在线
+      try {
+        const { enforceSingleWebSession } = await import('@/lib/deviceManager')
+        await enforceSingleWebSession()
+      } catch {}
       
       if (userData) {
         setSuccess("登录成功")
