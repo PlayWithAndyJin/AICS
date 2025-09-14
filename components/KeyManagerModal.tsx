@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import CryptoJS from 'crypto-js'
 
 interface KeyManagerModalProps {
   isOpen: boolean
@@ -49,25 +48,9 @@ const BRANDS: BrandInfo[] = [
   { name: '火山引擎豆包', label: 'volcengine', key: 'volcengineApiKey', provider: 'volcengine' }
 ]
 
-// 解密唯一密钥的函数
-function decryptUniqueKey(encryptedKey: string, secretKey: string): string | null {
-  try {
-    if (typeof window !== 'undefined' && window.CryptoJS) {
-      const bytes = window.CryptoJS.AES.decrypt(encryptedKey, secretKey)
-      return bytes.toString(window.CryptoJS.enc.Utf8)
-    } else {
-      console.error('CryptoJS 未加载')
-      return null
-    }
-  } catch (error) {
-    console.error('解密失败:', error)
-    return null
-  }
-}
 
 export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerModalProps) {
   const [uniqueKey, setUniqueKey] = useState<string>('')
-  const [decryptedUniqueKey, setDecryptedUniqueKey] = useState<string>('')
   const [keys, setKeys] = useState<KeyData>({
     aliyunApiKey: '',
     deepseekApiKey: '',
@@ -84,8 +67,6 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
   const [isUpdating, setIsUpdating] = useState(false)
   const [savedKeys, setSavedKeys] = useState<Set<keyof KeyData>>(new Set())
   const [copied, setCopied] = useState(false)
-  const [showDecryptModal, setShowDecryptModal] = useState(false)
-  const [decryptKey, setDecryptKey] = useState('')
 
   useEffect(() => {
     if (message && message.includes('成功')) {
@@ -103,20 +84,7 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
     }
   }, [isOpen, userId])
 
-  // 加载 CryptoJS 库
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !window.CryptoJS) {
-      const script = document.createElement('script')
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js'
-      script.onload = () => {
-        console.log('CryptoJS 加载成功')
-      }
-      script.onerror = () => {
-        console.error('CryptoJS 加载失败')
-      }
-      document.head.appendChild(script)
-    }
-  }, [])
+  // 注意：不再需要加载 CryptoJS 库，解密功能已移至服务端
 
   const fetchUserKeys = async () => {
     try {
@@ -358,23 +326,6 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
     }
   }
 
-  const handleDecryptUniqueKey = () => {
-    if (!decryptKey.trim()) {
-      setMessage('请输入解密密钥')
-      return
-    }
-
-    const decrypted = decryptUniqueKey(uniqueKey, decryptKey.trim())
-    if (decrypted) {
-      setDecryptedUniqueKey(decrypted)
-      setShowDecryptModal(false)
-      setDecryptKey('')
-      setMessage('唯一密钥解密成功')
-    } else {
-      setMessage('解密失败，请检查解密密钥是否正确')
-    }
-  }
-
   const handleDeleteApiKey = async (brand: BrandInfo) => {
     if (!confirm(`确定要删除 ${brand.name} 的API密钥吗？`)) {
       return
@@ -448,13 +399,13 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
           </div>
 
           {uniqueKey && (
-            <div className="mb-6 space-y-4">
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <label className="block text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-                  您的唯一密钥（加密）
+            <div className="mb-6">
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <label className="block text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                  您的唯一密钥
                 </label>
                 <div className="flex items-center space-x-2">
-                  <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 rounded border text-sm font-mono text-blue-900 dark:text-blue-100 break-all">
+                  <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 rounded border text-sm font-mono text-green-900 dark:text-green-100 break-all">
                     {uniqueKey}
                   </code>
                   <button
@@ -467,59 +418,19 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
                         setCopied(false)
                       }
                     }}
-                    className={`px-3 py-2 rounded text-sm transition-colors ${copied ? 'bg-green-600 text-white' : 'text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800'}`}
+                    className={`px-3 py-2 rounded text-sm transition-colors ${copied ? 'bg-green-600 text-white' : 'text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800'}`}
                     title={copied ? '已复制' : '复制密钥'}
                   >
                     {copied ? '已复制' : '复制'}
                   </button>
                 </div>
-                <div className="flex items-center justify-between mt-2">
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
-                    这是加密后的唯一密钥，需要解密后才能使用。
-                  </p>
-                  <button
-                    onClick={() => setShowDecryptModal(true)}
-                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                  >
-                    解密
-                  </button>
-                </div>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                  ✅ 格式验证: {uniqueKey.match(/^KMUK-[A-Z0-9]{8}-SFFU$/) ? '格式正确' : '格式错误'}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                  请妥善保管您的唯一密钥，它将用于安全获取您的大模型API密钥。
+                </p>
               </div>
-
-              {decryptedUniqueKey && (
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <label className="block text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                    解密后的唯一密钥
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 rounded border text-sm font-mono text-green-900 dark:text-green-100 break-all">
-                      {decryptedUniqueKey}
-                    </code>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(decryptedUniqueKey)
-                          setCopied(true)
-                          setTimeout(() => setCopied(false), 1500)
-                        } catch (e) {
-                          setCopied(false)
-                        }
-                      }}
-                      className={`px-3 py-2 rounded text-sm transition-colors ${copied ? 'bg-green-600 text-white' : 'text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800'}`}
-                      title={copied ? '已复制' : '复制密钥'}
-                    >
-                      {copied ? '已复制' : '复制'}
-                    </button>
-                  </div>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                    ✅ 格式验证: {decryptedUniqueKey.match(/^KMUK-[A-Z0-9]{8}-SFFU$/) ? '格式正确' : '格式错误'}
-                  </p>
-                </div>
-              )}
-
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                请妥善保管您的唯一密钥，它将用于安全获取您的大模型API密钥。
-              </p>
             </div>
           )}
 
@@ -647,58 +558,7 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
         </div>
       )}
 
-      {/* 解密唯一密钥弹窗 */}
-      {showDecryptModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                解密唯一密钥
-              </h3>
-              <button
-                onClick={() => setShowDecryptModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                解密密钥
-              </label>
-              <input
-                type="password"
-                placeholder="请输入解密密钥"
-                value={decryptKey}
-                onChange={(e) => setDecryptKey(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                请输入服务端提供的解密密钥来解密您的唯一密钥
-              </p>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowDecryptModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleDecryptUniqueKey}
-                disabled={!decryptKey.trim()}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                解密
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 注意：解密弹窗已移除，唯一密钥现在由服务端直接返回解密后的值 */}
     </>
   )
 } 
