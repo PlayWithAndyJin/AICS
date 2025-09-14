@@ -108,7 +108,7 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
 
       const uniqueKeyData: UniqueKeyResponse = await uniqueKeyResponse.json()
       setUniqueKey(uniqueKeyData.uniqueKey)
-      const allKeysResponse = await fetch('/api/proxy/api-keys/get', {
+      const allKeysResponse = await fetch('/api/proxy/api-keys', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -424,9 +424,11 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
                     {copied ? '已复制' : '复制'}
                   </button>
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                  ✅ 格式验证: {uniqueKey.match(/^KMUK-[A-Z0-9]{8}-SFFU$/) ? '格式正确' : '格式错误'}
-                </p>
+                {!uniqueKey.match(/^KMUK-[A-Z0-9]{8}-SFFU$/) && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                    ❌ 格式验证: 格式错误，请联系管理员或开发者！
+                  </p>
+                )}
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                   请妥善保管您的唯一密钥，它将用于安全获取您的大模型API密钥。
                 </p>
