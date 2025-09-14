@@ -47,4 +47,18 @@ export function generateRequestSignature(userId: string, uniqueKey: string, time
 export function verifyRequestSignature(userId: string, uniqueKey: string, timestamp: number, signature: string): boolean {
   const expectedSignature = generateRequestSignature(userId, uniqueKey, timestamp)
   return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expectedSignature, 'hex'))
+}
+
+// 简单的AES解密函数，用于解密唯一密钥
+export function decryptUniqueKey(encryptedKey: string): string {
+  try {
+    const key = crypto.scryptSync(UNIQUE_KEY_ENCRYPTION_KEY, 'salt', 32)
+    const decipher = crypto.createDecipher('aes-256-cbc', key)
+    let decrypted = decipher.update(encryptedKey, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    return decrypted
+  } catch (error) {
+    console.error('解密唯一密钥失败:', error)
+    throw new Error('解密唯一密钥失败')
+  }
 } 
