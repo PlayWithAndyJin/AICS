@@ -52,19 +52,11 @@ export function verifyRequestSignature(userId: string, uniqueKey: string, timest
 
 export function decryptUniqueKey(encryptedKey: string): string {
   try {
-    console.log('decryptUniqueKey 被调用')
-    console.log('环境变量UNIQUE_KEY_ENCRYPTION_KEY:', process.env.UNIQUE_KEY_ENCRYPTION_KEY ? '已设置' : '未设置')
-    console.log('加密的唯一密钥:', encryptedKey)
-    
     const bytes = CryptoJS.AES.decrypt(encryptedKey, UNIQUE_KEY_ENCRYPTION_KEY);
-    const result = bytes.toString(CryptoJS.enc.Utf8);
-    
-    console.log('解密结果:', result)
-    return result;
+    return bytes.toString(CryptoJS.enc.Utf8);
   } catch (error) {
     console.error('解密唯一密钥失败:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('错误详情:', errorMessage);
     throw new Error('解密唯一密钥失败: ' + errorMessage);
   }
 } 
