@@ -1,14 +1,14 @@
 import crypto from 'crypto'
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY as string
-if (!ENCRYPTION_KEY) {
-  throw new Error('Missing ENCRYPTION_KEY environment variable')
+const UNIQUE_KEY_ENCRYPTION_KEY = process.env.UNIQUE_KEY_ENCRYPTION_KEY as string
+if (!UNIQUE_KEY_ENCRYPTION_KEY) {
+  throw new Error('Missing UNIQUE_KEY_ENCRYPTION_KEY environment variable')
 }
 const ALGORITHM = 'aes-256-gcm'
 
 export function encryptWithUniqueKey(data: string, uniqueKey: string): { encryptedData: string; iv: string; authTag: string } {
   const iv = crypto.randomBytes(16)
-  const key = crypto.scryptSync(ENCRYPTION_KEY + uniqueKey, 'salt', 32)
+  const key = crypto.scryptSync(UNIQUE_KEY_ENCRYPTION_KEY + uniqueKey, 'salt', 32)
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
   cipher.setAAD(Buffer.from(uniqueKey, 'hex'))
   
@@ -24,7 +24,7 @@ export function encryptWithUniqueKey(data: string, uniqueKey: string): { encrypt
 
 // 使用唯一密钥解密API密钥
 export function decryptWithUniqueKey(encryptedData: string, uniqueKey: string, iv: string, authTag: string): string {
-  const key = crypto.scryptSync(ENCRYPTION_KEY + uniqueKey, 'salt', 32)
+  const key = crypto.scryptSync(UNIQUE_KEY_ENCRYPTION_KEY + uniqueKey, 'salt', 32)
   const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'hex'))
   decipher.setAAD(Buffer.from(uniqueKey, 'hex'))
   decipher.setAuthTag(Buffer.from(authTag, 'hex'))
@@ -41,7 +41,7 @@ export function validateUniqueKey(uniqueKey: string): boolean {
 
 export function generateRequestSignature(userId: string, uniqueKey: string, timestamp: number): string {
   const data = `${userId}:${uniqueKey}:${timestamp}`
-  return crypto.createHmac('sha256', ENCRYPTION_KEY).update(data).digest('hex')
+  return crypto.createHmac('sha256', UNIQUE_KEY_ENCRYPTION_KEY).update(data).digest('hex')
 }
 
 export function verifyRequestSignature(userId: string, uniqueKey: string, timestamp: number, signature: string): boolean {
