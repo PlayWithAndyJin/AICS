@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import * as CryptoJS from 'crypto-js'
 
 const UNIQUE_KEY_ENCRYPTION_KEY = process.env.UNIQUE_KEY_ENCRYPTION_KEY as string
 if (!UNIQUE_KEY_ENCRYPTION_KEY) {
@@ -49,43 +50,10 @@ export function verifyRequestSignature(userId: string, uniqueKey: string, timest
   return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expectedSignature, 'hex'))
 }
 
-function evpBytesToKey(password: string, salt: Buffer, keyLen: number, ivLen: number) {
-  const totalLen = keyLen + ivLen;
-  let derived = Buffer.alloc(0);
-  let hasher = crypto.createHash('md5');
-  
-  while (derived.length < totalLen) {
-    if (derived.length > 0) {
-      hasher.update(derived.slice(-16));
-    }
-    hasher.update(password, 'utf8');
-    hasher.update(salt);
-    const hash = hasher.digest();
-    derived = Buffer.concat([derived, hash]);
-    hasher = crypto.createHash('md5');
-  }
-  
-  return {
-    key: derived.slice(0, keyLen),
-    iv: derived.slice(keyLen, keyLen + ivLen)
-  };
-}
-
 export function decryptUniqueKey(encryptedKey: string): string {
   try {
-    const encryptedData = Buffer.from(encryptedKey, 'base64');
-    if (encryptedData.length < 16 || encryptedData.toString('utf8', 0, 8) !== 'Salted__') {
-      throw new Error('无效的CryptoJS加密格式');
-    }
-    const salt = encryptedData.slice(8, 16);
-    const encrypted = encryptedData.slice(16);
-    const { key, iv } = evpBytesToKey(UNIQUE_KEY_ENCRYPTION_KEY, salt, 32, 16);
-    const ciphertext = encrypted.slice(16);
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-    let decrypted = decipher.update(ciphertext, undefined, 'utf8');
-    decrypted += decipher.final('utf8');
-    
-    return decrypted;
+    const bytes = CryptoJS.AES.decrypt(encryptedKey, UNIQUE_KEY_ENCRYPTION_KEY);
+    return bytes.toString(CryptoJS.enc.Utf8);
   } catch (error) {
     console.error('解密唯一密钥失败:', error);
     throw new Error('解密唯一密钥失败');
