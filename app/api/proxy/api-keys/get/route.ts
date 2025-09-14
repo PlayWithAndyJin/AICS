@@ -20,16 +20,22 @@ export async function GET(req: Request) {
     })
 
     const data = await response.json()
-    
-    // 如果获取成功且包含加密的唯一密钥，则解密它
     if (response.ok && data.uniqueKey) {
       try {
+        console.log('开始解密唯一密钥...')
+        console.log('加密的唯一密钥:', data.uniqueKey)
+        console.log('环境变量UNIQUE_KEY_ENCRYPTION_KEY是否存在:', !!process.env.UNIQUE_KEY_ENCRYPTION_KEY)
+        
         const decryptedKey = decryptUniqueKey(data.uniqueKey)
+        console.log('解密后的唯一密钥:', decryptedKey)
+        
         data.uniqueKey = decryptedKey
       } catch (decryptError) {
         console.error('解密唯一密钥失败:', decryptError)
+        const errorMessage = decryptError instanceof Error ? decryptError.message : String(decryptError);
+        console.error('错误详情:', errorMessage)
         return NextResponse.json(
-          { error: '解密唯一密钥失败' },
+          { error: '解密唯一密钥失败: ' + errorMessage },
           { status: 500 }
         )
       }
