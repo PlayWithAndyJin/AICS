@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 import crypto from 'crypto'
-import { encryptWithUniqueKey, decryptWithUniqueKey, validateUniqueKey, verifyRequestSignature } from '@/lib/crypto'
+import { verifyRequestSignature } from '@/lib/crypto'
 
 export async function GET(req: Request) {
   try {
