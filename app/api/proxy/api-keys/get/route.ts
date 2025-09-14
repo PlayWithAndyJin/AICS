@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
+import { decryptUniqueKey } from '@/lib/crypto'
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('authorization')
     if (!authHeader) {
@@ -10,18 +11,29 @@ export async function POST(req: Request) {
       )
     }
 
-    const body = await req.json()
-
-    const response = await fetch('https://api.andyjin.website/api/api-keys/get', {
-      method: 'POST',
+    const response = await fetch('https://api.andyjin.website/api/keys/unique-key', {
+      method: 'GET',
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
+      }
     })
 
     const data = await response.json()
+    
+    // 如果获取成功且包含加密的唯一密钥，则解密它
+    if (response.ok && data.uniqueKey) {
+      try {
+        const decryptedKey = decryptUniqueKey(data.uniqueKey)
+        data.uniqueKey = decryptedKey
+      } catch (decryptError) {
+        console.error('解密唯一密钥失败:', decryptError)
+        return NextResponse.json(
+          { error: '解密唯一密钥失败' },
+          { status: 500 }
+        )
+      }
+    }
     
     return NextResponse.json(data, { 
       status: response.status,
