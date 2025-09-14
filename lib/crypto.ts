@@ -52,15 +52,12 @@ export function verifyRequestSignature(userId: string, uniqueKey: string, timest
 export function decryptUniqueKey(encryptedKey: string): string {
   try {
     const encryptedData = Buffer.from(encryptedKey, 'base64')
-    const salt = encryptedData.slice(8, 16)
-    const encrypted = encryptedData.slice(16)
-    const key = crypto.pbkdf2Sync(UNIQUE_KEY_ENCRYPTION_KEY, salt, 1000, 32, 'sha1')
-    const iv = encrypted.slice(0, 16)
-    const ciphertext = encrypted.slice(16)
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
-    let decrypted = decipher.update(ciphertext, undefined, 'utf8')
-    decrypted += decipher.final('utf8')
+    const hexData = encryptedData.toString('hex')
     
+    const key = crypto.scryptSync(UNIQUE_KEY_ENCRYPTION_KEY, 'salt', 32)
+    const decipher = crypto.createDecipher('aes-256-cbc', key)
+    let decrypted = decipher.update(hexData, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
     return decrypted
   } catch (error) {
     console.error('解密唯一密钥失败:', error)
