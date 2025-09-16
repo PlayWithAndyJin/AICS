@@ -33,6 +33,7 @@ export default function ProfilePage() {
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [isNewFeatureOpen, setIsNewFeatureOpen] = useState(false)
+  const [showLegacyNotice, setShowLegacyNotice] = useState(true)
   const router = useRouter()
 
   // 检查是否使用新认证系统
@@ -521,6 +522,36 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* 右侧悬浮旧版公告（仅在未登录时显示更贴近“登录页”语境，也可登录后保留） */}
+      {showLegacyNotice && (
+        <div className="fixed right-2 md:right-4 top-24 md:top-28 z-30 max-w-xs w-[88vw] sm:w-80">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-amber-300/60 dark:border-amber-700/50 rounded-xl shadow-xl overflow-hidden">
+            <div className="flex items-start p-4">
+              <div className="mt-0.5 mr-3">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
+                  !
+                </span>
+              </div>
+              <div className="text-[13px] leading-relaxed text-amber-900 dark:text-amber-100">
+                <span className="font-semibold mr-1">公告</span>
+                用户您好，核心数据库于2025年9月16日至9月20日上午10时整进行月度维护与功能升级，期间账号管理机制不可用，请用户悉知！
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLegacyNotice(false)}
+                className="ml-3 text-amber-700/70 hover:text-amber-900 dark:text-amber-200/70 dark:hover:text-amber-100"
+                aria-label="关闭公告"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600" />
+          </div>
+        </div>
+      )}
 
       {/* 密钥管理弹窗 */}
       <KeyManagerModal
