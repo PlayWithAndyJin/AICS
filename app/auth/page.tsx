@@ -220,6 +220,13 @@ export default function AuthPage() {
                   </button>
                 </div>
               </div>
+              {/* 底部公告 */}
+              <div className="mt-auto pt-4">
+                <div className="text-xs text-amber-800 dark:text-amber-200 bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/70 dark:border-amber-700/50 rounded-xl p-3 shadow-sm">
+                  <span className="font-semibold mr-1">公告：</span>
+                  用户您好，核心数据库于2025年9月16日至9月20日上午10时整进行月度维护与功能升级，期间账号管理机制不可用，请用户悉知！
+                </div>
+              </div>
               <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-fuchsia-50/60 dark:from-gray-900/40 pointer-events-none" />
             </div>
 
@@ -534,10 +541,6 @@ export default function AuthPage() {
                 <div className="flex items-start gap-2">
                   <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-rose-600" />
                   <p>网页端不支持显示用户头像</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-                  <p>不支持使用密钥管家功能（待移动端上线该功能时网页端将支持）</p>
                 </div>
               </div>
               <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
