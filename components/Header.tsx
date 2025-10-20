@@ -135,16 +135,21 @@ export default function Header() {
           {/* 右侧按钮区域 */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* 在线状态指示器 - 移动端隐藏 */}
-            <div className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-200 dark:border-green-700/30">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-green-700 dark:text-green-400">在线服务</span>
+            <div className="hidden lg:flex items-center">
+              <iframe 
+                src="https://status.andyjin.website/badge?theme=system" 
+                width="150" 
+                height="30" 
+                frameBorder="0" 
+                scrolling="no" 
+                style={{ colorScheme: 'normal', marginRight: '0px'}}
+              ></iframe>
             </div>
-            
             <a 
               href="https://www.andyjin.website" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="p-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center"
+              className="-ml-2 p-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center"
               title="返回主页"
             >
               <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
