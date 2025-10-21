@@ -529,14 +529,6 @@ export default function FeedbackPage() {
         setEmailError('')
       }
 
-      // 确保前端已配置公开的反馈密钥
-      const clientApiKey = process.env.NEXT_PUBLIC_FEEDBACK_API_KEY
-      if (!clientApiKey) {
-        setSubmitStatus('error')
-        setSubmitErrorMsg('前端未配置 NEXT_PUBLIC_FEEDBACK_API_KEY，请检查环境变量')
-        setIsSubmitting(false)
-        return
-      }
 
       const selectedPlatform = platforms.find(platform => platform.value === formData.platform)
       const selectedSpecificPlatform = formData.specificPlatform ? 
@@ -573,7 +565,7 @@ ${formData.content}`
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + clientApiKey
+          'Authorization': 'Bearer ' + (process.env.NEXT_PUBLIC_FEEDBACK_API_KEY || 'default-key')
         },
         body: JSON.stringify(apiData),
       })
@@ -599,27 +591,11 @@ ${formData.content}`
         setCurrentStep(1)
       } else {
         setSubmitStatus('error')
-        try {
-          const errorData = await response.json()
-          if (response.status === 401) {
-            setSubmitErrorMsg('接口鉴权失败：请检查 FEEDBACK_API_KEY 与 NEXT_PUBLIC_FEEDBACK_API_KEY 是否一致')
-          } else if (response.status === 500) {
-            // 针对常见邮件配置错误给出明确提示
-            const msg = typeof errorData?.error === 'string' ? errorData.error : '服务器内部错误'
-            setSubmitErrorMsg(`服务端错误：${msg}，请检查 SMTP_* 与 DEVELOPER_EMAIL 配置`)
-          } else if (response.status === 400) {
-            const msg = typeof errorData?.error === 'string' ? errorData.error : '请求不合法'
-            setSubmitErrorMsg(`提交失败：${msg}`)
-          } else {
-            setSubmitErrorMsg('提交失败，请稍后重试')
-          }
-        } catch (_) {
-          setSubmitErrorMsg('提交失败，请稍后重试')
-        }
+        setSubmitErrorMsg('提交失败，请稍后重试')
       }
     } catch (error) {
-      setSubmitStatus('error')
-      setSubmitErrorMsg('网络或服务器异常，请检查网络连接或稍后再试')
+        setSubmitStatus('error')
+        setSubmitErrorMsg('提交失败，请检查网络连接后重试')
     } finally {
       setIsSubmitting(false)
     }
