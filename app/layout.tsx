@@ -18,6 +18,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        <script src="https://andyjinwebsite.statuspage.io/embed/script.js"></script>
+      </head>
       <body className={`${inter.className} gradient-bg min-h-screen`}>
         <ThemeProvider>
           <UserProvider>
