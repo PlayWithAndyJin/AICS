@@ -41,6 +41,7 @@ export default function ProfilePage() {
   const [mfaDisableCode, setMfaDisableCode] = useState('')
   const [mfaMsg, setMfaMsg] = useState('')
   const [mfaLoading, setMfaLoading] = useState(false)
+  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null)
   const router = useRouter()
 
   // 检查是否使用新认证系统
@@ -90,7 +91,7 @@ export default function ProfilePage() {
     return user
   }
 
-  // 检查是否已登录（支持新旧系统）
+  // 检查是否已登录
   const checkLoginStatus = () => {
     const result = isNewAuth && newAuthUser ? true : isLoggedIn
     return result
@@ -166,7 +167,10 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const check = async () => {
-      await fetchUserInfo()
+      const data = await fetchUserInfo()
+      if (data && typeof (data as any).mfaEnabled !== 'undefined') {
+        setMfaEnabled(Boolean((data as any).mfaEnabled))
+      }
     }
     const onVisible = () => {
       if (document.visibilityState === 'visible') check()
@@ -536,7 +540,14 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">多因素认证（MFA）</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">多因素认证（MFA）</h3>
+                        {mfaEnabled !== null && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full border ${mfaEnabled ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/40' : 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-700/40'}`}>
+                            {mfaEnabled ? '已启用' : '未启用'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">启用后，登录除账号密码外还需输入6位验证码</p>
 
@@ -559,7 +570,7 @@ export default function ProfilePage() {
                               if (!res.ok) throw new Error(data.message || '发起设置失败')
                               setMfaSecret(data.secret || '')
                               setMfaOtpauth(data.otpauth || '')
-                              setMfaMsg('已生成密钥，请用认证器扫描/导入 otpauth')
+                              setMfaMsg('已生成密钥，请用认证器扫码绑定')
                             } catch (e: any) {
                               setMfaMsg(e.message || '网络错误')
                             } finally {
@@ -568,10 +579,10 @@ export default function ProfilePage() {
                           }}
                           className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm disabled:opacity-50"
                         >
-                          发起设置（生成otpauth）
+                          发起设置（生成二维码）
                         </button>
 
-                        {/* 仅支持扫码完成绑定 */}
+                        {/* 出于安全与体验考虑，此处不再展示明文 Secret，仅支持扫码 */}
                         {mfaSecret && (
                           <div className="text-xs p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30">
                             <div className="text-gray-600 dark:text-gray-400">已生成密钥，请使用二维码完成绑定</div>
@@ -600,7 +611,7 @@ export default function ProfilePage() {
                           <div className="flex gap-2">
                             <input
                               inputMode="numeric"
-                              pattern="\\d{6}"
+                              pattern="^[0-9]{6}$"
                               maxLength={6}
                               value={mfaEnableCode}
                               onChange={(e) => setMfaEnableCode(e.target.value.replace(/[^0-9]/g, ''))}
@@ -624,6 +635,8 @@ export default function ProfilePage() {
                                   const data = await res.json()
                                   if (!res.ok) throw new Error(data.message || '启用失败')
                                   setMfaMsg('MFA 已启用')
+                                  setMfaEnabled(true)
+                                  setMfaEnableCode('')
                                 } catch (e: any) {
                                   setMfaMsg(e.message || '网络错误')
                                 } finally {
@@ -642,7 +655,7 @@ export default function ProfilePage() {
                           <div className="flex gap-2">
                             <input
                               inputMode="numeric"
-                              pattern="\\d{6}"
+                              pattern="^[0-9]{6}$"
                               maxLength={6}
                               value={mfaDisableCode}
                               onChange={(e) => setMfaDisableCode(e.target.value.replace(/[^0-9]/g, ''))}
@@ -666,6 +679,8 @@ export default function ProfilePage() {
                                   const data = await res.json()
                                   if (!res.ok) throw new Error(data.message || '关闭失败')
                                   setMfaMsg('MFA 已关闭')
+                                  setMfaEnabled(false)
+                                  setMfaDisableCode('')
                                 } catch (e: any) {
                                   setMfaMsg(e.message || '网络错误')
                                 } finally {
