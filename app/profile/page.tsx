@@ -7,6 +7,7 @@ import { useUser } from '@/contexts/UserContext'
 import ProfileFooter from '@/components/ProfileFooter'
 import Link from 'next/link'
 import { performLogout, isNewAuthSystem } from '@/lib/auth'
+import { QRCodeSVG } from 'qrcode.react'
 import { fetchUserInfo, setupTokenStatusCheck } from '@/lib/tokenManager'
 
 // 新认证系统的用户数据类型
@@ -34,6 +35,12 @@ export default function ProfilePage() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [isNewFeatureOpen, setIsNewFeatureOpen] = useState(false)
   const [showLegacyNotice, setShowLegacyNotice] = useState(true)
+  const [mfaSecret, setMfaSecret] = useState('')
+  const [mfaOtpauth, setMfaOtpauth] = useState('')
+  const [mfaEnableCode, setMfaEnableCode] = useState('')
+  const [mfaDisableCode, setMfaDisableCode] = useState('')
+  const [mfaMsg, setMfaMsg] = useState('')
+  const [mfaLoading, setMfaLoading] = useState(false)
   const router = useRouter()
 
   // 检查是否使用新认证系统
@@ -516,6 +523,169 @@ export default function ProfilePage() {
                   >
                     清除缓存
                   </button>
+                </div>
+              </div>
+
+              {/* MFA 设置模块 */}
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl p-6 border border-white/20 dark:border-gray-700/20 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-violet-100 dark:bg-violet-900/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11zM19 20a7 7 0 10-14 0h14z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">多因素认证（MFA）</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">启用后，登录除账号密码外还需输入6位验证码</p>
+
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <button
+                          type="button"
+                          disabled={mfaLoading}
+                          onClick={async () => {
+                            setMfaMsg('')
+                            setMfaLoading(true)
+                            try {
+                              const token = localStorage.getItem('accessToken')
+                              if (!token) throw new Error('请先登录')
+                              const res = await fetch('/api/auth/mfa/setup', {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                              })
+                              const data = await res.json()
+                              if (!res.ok) throw new Error(data.message || '发起设置失败')
+                              setMfaSecret(data.secret || '')
+                              setMfaOtpauth(data.otpauth || '')
+                              setMfaMsg('已生成密钥，请用认证器扫描/导入 otpauth')
+                            } catch (e: any) {
+                              setMfaMsg(e.message || '网络错误')
+                            } finally {
+                              setMfaLoading(false)
+                            }
+                          }}
+                          className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm disabled:opacity-50"
+                        >
+                          发起设置（生成otpauth）
+                        </button>
+
+                        {/* 仅支持扫码完成绑定 */}
+                        {mfaSecret && (
+                          <div className="text-xs p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30">
+                            <div className="text-gray-600 dark:text-gray-400">已生成密钥，请使用二维码完成绑定</div>
+                          </div>
+                        )}
+                        {mfaOtpauth && (
+                          <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30">
+                            <div className="flex items-start gap-3">
+                              <div className="shrink-0">
+                                <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-white p-2">
+                                  <QRCodeSVG value={mfaOtpauth} size={160} includeMargin={true} />
+                                </div>
+                              </div>
+                              <div className="text-xs flex-1">
+                                <div className="text-gray-600 dark:text-gray-400">请使用 Google/Microsoft Authenticator 扫描二维码完成绑定。</div>
+                                <div className="text-gray-500 dark:text-gray-400 mt-2">出于安全考虑，不提供明文 otpauth 或复制功能。</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">启用：输入6位验证码</label>
+                          <div className="flex gap-2">
+                            <input
+                              inputMode="numeric"
+                              pattern="\\d{6}"
+                              maxLength={6}
+                              value={mfaEnableCode}
+                              onChange={(e) => setMfaEnableCode(e.target.value.replace(/[^0-9]/g, ''))}
+                              placeholder="123456"
+                              className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+                            />
+                            <button
+                              type="button"
+                              disabled={mfaLoading || mfaEnableCode.length !== 6}
+                              onClick={async () => {
+                                setMfaMsg('')
+                                setMfaLoading(true)
+                                try {
+                                  const token = localStorage.getItem('accessToken')
+                                  if (!token) throw new Error('请先登录')
+                                  const res = await fetch('/api/auth/mfa/enable', {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ code: mfaEnableCode })
+                                  })
+                                  const data = await res.json()
+                                  if (!res.ok) throw new Error(data.message || '启用失败')
+                                  setMfaMsg('MFA 已启用')
+                                } catch (e: any) {
+                                  setMfaMsg(e.message || '网络错误')
+                                } finally {
+                                  setMfaLoading(false)
+                                }
+                              }}
+                              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm disabled:opacity-50"
+                            >
+                              启用
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">关闭：输入6位验证码</label>
+                          <div className="flex gap-2">
+                            <input
+                              inputMode="numeric"
+                              pattern="\\d{6}"
+                              maxLength={6}
+                              value={mfaDisableCode}
+                              onChange={(e) => setMfaDisableCode(e.target.value.replace(/[^0-9]/g, ''))}
+                              placeholder="123456"
+                              className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+                            />
+                            <button
+                              type="button"
+                              disabled={mfaLoading || mfaDisableCode.length !== 6}
+                              onClick={async () => {
+                                setMfaMsg('')
+                                setMfaLoading(true)
+                                try {
+                                  const token = localStorage.getItem('accessToken')
+                                  if (!token) throw new Error('请先登录')
+                                  const res = await fetch('/api/auth/mfa/disable', {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ code: mfaDisableCode })
+                                  })
+                                  const data = await res.json()
+                                  if (!res.ok) throw new Error(data.message || '关闭失败')
+                                  setMfaMsg('MFA 已关闭')
+                                } catch (e: any) {
+                                  setMfaMsg(e.message || '网络错误')
+                                } finally {
+                                  setMfaLoading(false)
+                                }
+                              }}
+                              className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 text-sm disabled:opacity-50"
+                            >
+                              关闭
+                            </button>
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">关闭时需提交当前时间步内有效的6位码</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {mfaMsg && (
+                      <div className="mt-4 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-lg p-3">{mfaMsg}</div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
