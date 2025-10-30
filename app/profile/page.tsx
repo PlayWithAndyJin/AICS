@@ -591,8 +591,7 @@ export default function ProfilePage() {
                             setMfaDisableModalCode('')
                             setIsMfaDisableModalOpen(true)
                           }}
-                          disabled={!mfaEnabled}
-                          className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-sm disabled:opacity-50"
+                          className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-sm"
                         >
                           去关闭
                         </button>
