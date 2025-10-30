@@ -9,6 +9,8 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
+  const [totpCode, setTotpCode] = useState('')
+  const [needTotp, setNeedTotp] = useState(false)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -51,12 +53,24 @@ export default function AuthPage() {
         body: JSON.stringify({
           identifier: identifier.trim(),
           password: password.trim(),
-          deviceId
+          deviceId,
+          ...(totpCode.trim() ? { totpCode: totpCode.trim() } : {})
         })
       })
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.message || '登录失败')
+        const msg = (data && data.message) ? String(data.message) : ''
+        if (msg.includes('MFA required')) {
+          setNeedTotp(true)
+          setError('该账户已开启MFA，请输入6位验证码')
+          return
+        }
+        if (msg.includes('Invalid TOTP')) {
+          setNeedTotp(true)
+          setError('验证码错误，请重新输入当前30秒内的6位码')
+          return
+        }
+        throw new Error(msg || '登录失败')
       }
 
       localStorage.setItem('accessToken', data.accessToken)
@@ -224,7 +238,7 @@ export default function AuthPage() {
               <div className="mt-auto pt-4">
                 <div className="text-xs text-amber-800 dark:text-amber-200 bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/70 dark:border-amber-700/50 rounded-xl p-3 shadow-sm">
                   <span className="font-semibold mr-1">公告：</span>
-                  用户您好，核心数据库于2025年9月16日至9月20日上午10时整进行月度维护与功能升级，期间账号管理机制不可用，请用户悉知！
+                  用户您好，新版账号管理机制现已支持MFA多因素认证，用户可以在个人中心开启或关闭MFA，请用户悉知！
                 </div>
               </div>
               <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-fuchsia-50/60 dark:from-gray-900/40 pointer-events-none" />
@@ -324,13 +338,35 @@ export default function AuthPage() {
                             </svg>
                           ) : (
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 06 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                           )}
                         </button>
                       </div>
                     </div>
+                    {needTotp && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">6位验证码</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11zM19 20a7 7 0 10-14 0h14z" />
+                            </svg>
+                          </div>
+                          <input
+                            inputMode="numeric"
+                            pattern="\\d{6}"
+                            maxLength={6}
+                            value={totpCode}
+                            onChange={(e) => setTotpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                            placeholder="输入6位验证码"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300/80 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200 shadow-sm tracking-widest"
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">请打开认证器App（Google/Microsoft等）查看当期30秒内的验证码</p>
+                      </div>
+                    )}
                     <button
                       type="submit"
                       disabled={isLoading}
