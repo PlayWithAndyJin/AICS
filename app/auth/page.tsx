@@ -356,12 +356,14 @@ export default function AuthPage() {
                           </div>
                           <input
                             inputMode="numeric"
-                            pattern="\\d{6}"
+                            pattern="^[0-9]{6}$"
                             maxLength={6}
+                            autoComplete="one-time-code"
                             value={totpCode}
                             onChange={(e) => setTotpCode(e.target.value.replace(/[^0-9]/g, ''))}
                             placeholder="输入6位验证码"
                             className="w-full pl-10 pr-4 py-3 border border-gray-300/80 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200 shadow-sm tracking-widest"
+                            required={needTotp}
                           />
                         </div>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">请打开认证器App（Google/Microsoft等）查看当期30秒内的验证码</p>
