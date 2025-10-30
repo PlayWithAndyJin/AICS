@@ -553,7 +553,7 @@ export default function ProfilePage() {
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">启用后，登录除账号密码外还需输入6位验证码</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">启用后可以提升账户安全性,通过多重验证机制有效防止未授权访问,降低数据泄露风险。</p>
 
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-3">
@@ -732,7 +732,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 右侧悬浮旧版公告（仅在未登录时显示更贴近“登录页”语境，也可登录后保留） */}
+      {/* 右侧悬浮旧版公告 */}
       {showLegacyNotice && (
         <div className="fixed right-2 md:right-4 top-24 md:top-28 z-30 max-w-xs w-[88vw] sm:w-80">
           <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-amber-300/60 dark:border-amber-700/50 rounded-xl shadow-xl overflow-hidden">
@@ -744,7 +744,7 @@ export default function ProfilePage() {
               </div>
               <div className="text-[13px] leading-relaxed text-amber-900 dark:text-amber-100">
                 <span className="font-semibold mr-1">公告</span>
-                用户您好，核心数据库于2025年9月16日至9月20日上午10时整进行月度维护与功能升级，期间账号管理机制不可用，请用户悉知！
+                用户您好，新版账号管理机制现已支持MFA多因素认证，用户可以在个人中心开启或关闭MFA，请用户悉知！
               </div>
               <button
                 type="button"
