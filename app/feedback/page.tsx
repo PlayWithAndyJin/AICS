@@ -153,6 +153,7 @@ export default function FeedbackPage() {
       { value: 'current', label: '当前版本' }
     ],
     'sii-cli': [
+      { value: '1.2.201', label: '1.2.201' },
       { value: '1.2.1', label: '1.2.1' },
       { value: '1.1.0', label: '1.1.0' },
       { value: '1.0.2', label: '1.0.2' }
