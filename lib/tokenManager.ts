@@ -3,7 +3,7 @@
  * 处理accessToken和refreshToken的管理
  */
 
-interface UserData {
+export interface UserData {
   userId: string
   username: string
   email: string | null
@@ -12,6 +12,7 @@ interface UserData {
   lastLoginAt: string
   createdAt: string
   updatedAt: string
+  mfaEnabled?: boolean
 }
 
 /**
