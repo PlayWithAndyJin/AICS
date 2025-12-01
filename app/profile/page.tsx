@@ -3,32 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import KeyManagerModal from '@/components/KeyManagerModal'
-import { useUser } from '@/contexts/UserContext'
-import ProfileFooter from '@/components/ProfileFooter'
-import Link from 'next/link'
-import { performLogout, isNewAuthSystem } from '@/lib/auth'
+import { performLogout } from '@/lib/auth'
 import { QRCodeSVG } from 'qrcode.react'
-import { fetchUserInfo, setupTokenStatusCheck } from '@/lib/tokenManager'
-
-// 新认证系统的用户数据类型
-interface NewAuthUser {
-  userId: string
-  email: string | null
-  username: string
-  status: string
-  metadata: any
-  lastLoginAt: string
-  createdAt: string
-  updatedAt: string
-}
+import { fetchUserInfo, setupTokenStatusCheck, type UserData } from '@/lib/tokenManager'
 
 export default function ProfilePage() {
-  const { user, isLoggedIn, login, logout } = useUser()
-  const [newAuthUser, setNewAuthUser] = useState<NewAuthUser | null>(null)
-  const [isNewAuth, setIsNewAuth] = useState(false)
-  const [userId, setUserId] = useState('')
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [user, setUser] = useState<UserData | null>(null)
+  const [isUserLoading, setIsUserLoading] = useState(true)
   const [error, setError] = useState('')
   const [showUserDetails, setShowUserDetails] = useState(false)
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false)
@@ -40,7 +21,6 @@ export default function ProfilePage() {
   const [mfaEnableCode, setMfaEnableCode] = useState('')
   const [mfaDisableCode, setMfaDisableCode] = useState('')
   const [mfaMsg, setMfaMsg] = useState('')
-  const [mfaLoading, setMfaLoading] = useState(false)
   const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null)
   const [isMfaEnableModalOpen, setIsMfaEnableModalOpen] = useState(false)
   const [isMfaDisableModalOpen, setIsMfaDisableModalOpen] = useState(false)
@@ -52,112 +32,46 @@ export default function ProfilePage() {
   useEffect(() => {
     const accessToken = localStorage.getItem('accessToken')
     const refreshToken = localStorage.getItem('refreshToken')
-    const savedUser = localStorage.getItem('user')
-    
-    if (accessToken && refreshToken) {
-      setupTokenStatusCheck()
 
-      // 确保网页端仅单设备在线
-      import('@/lib/deviceManager')
-        .then(m => m.enforceSingleWebSession())
-        .catch(() => {})
-      
-      if (savedUser) {
-        try {
-          const userData = JSON.parse(savedUser)
-          setNewAuthUser(userData)
-          setIsNewAuth(true)
-        } catch (e) {}      
-      } else {
-        fetchUserInfo().then(userData => {
-          if (userData) {
-            setNewAuthUser(userData)
-            setIsNewAuth(true)
-          }
-        })
-      }
-    }
-  }, [])
-
-  // 获取当前显示的用户信息
-  const getCurrentUser = () => {
-    if (isNewAuth && newAuthUser) {
-      return {
-        username: newAuthUser.username,
-        email: newAuthUser.email,
-        userId: newAuthUser.userId,
-        status: newAuthUser.status,
-        lastLoginAt: newAuthUser.lastLoginAt,
-        createdAt: newAuthUser.createdAt,
-        currentVersion: 'N/A' // 新系统没有这个字段
-      }
-    }
-    return user
-  }
-
-  // 检查是否已登录
-  const checkLoginStatus = () => {
-    const result = isNewAuth && newAuthUser ? true : isLoggedIn
-    return result
-  }
-
-  const isUserLoggedIn = checkLoginStatus()
-
-  const currentUser = getCurrentUser()
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!userId.trim() || !email.trim()) {
-      setError('请输入用户ID和邮箱')
+    if (!accessToken || !refreshToken) {
+      setIsUserLoading(false)
+      router.replace('/auth')
       return
     }
 
-    setIsLoading(true)
-    setError('')
+    setupTokenStatusCheck()
 
-    try {
-      const result = await login(userId.trim(), email.trim())
-      
-      if (result.success) {
-        setError('')
-        setUserId('')
-        setEmail('')
-        setTimeout(() => {
-          setIsLoading(false)
-        }, 500)
-      } else {
-        setError(result.message)
-        setIsLoading(false)
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser))
+      } catch {
+        localStorage.removeItem('user')
       }
-    } catch (error) {
-      setError('登录过程中发生错误')
-      setIsLoading(false)
     }
-  }
+
+    const loadUser = async () => {
+      const userData = await fetchUserInfo()
+      if (userData) {
+        setUser(userData)
+        setError('')
+      } else {
+        setError('无法获取账户信息，请重新登录')
+        setTimeout(() => router.replace('/auth'), 1200)
+      }
+      setIsUserLoading(false)
+    }
+
+    loadUser()
+  }, [router])
+
+  const isUserLoggedIn = Boolean(user)
 
   const handleLogout = async () => {
-    const result = await performLogout()
-    
-    // 如果是新认证系统，更新本地状态
-    if (isNewAuthSystem()) {
-      setNewAuthUser(null)
-      setIsNewAuth(false)
-    } else {
-      // 旧系统登出
-      logout()
-    }
-    
-    setUserId('')
-    setEmail('')
+    await performLogout()
+    setUser(null)
     setShowUserDetails(false)
-    
-    
-    // 可选：显示退出登录结果消息
-    if (result.message) {
-    }
-    
-    setTimeout(() => {
-      router.push("/auth")
-    }, 500)    // 退出登录成功后跳转到登录页面
+    router.push('/auth')
   }
 
   const clearCache = () => {
@@ -172,8 +86,11 @@ export default function ProfilePage() {
   useEffect(() => {
     const check = async () => {
       const data = await fetchUserInfo()
-      if (data && typeof (data as any).mfaEnabled !== 'undefined') {
-        setMfaEnabled(Boolean((data as any).mfaEnabled))
+      if (data) {
+        setUser(data)
+        if (typeof data.mfaEnabled !== 'undefined') {
+          setMfaEnabled(Boolean(data.mfaEnabled))
+        }
       }
     }
     const onVisible = () => {
@@ -238,243 +155,163 @@ export default function ProfilePage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
-      {/* 动态背景装饰 */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-purple-400/10 dark:from-blue-500/5 dark:to-purple-500/5 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/10 to-pink-400/10 dark:from-indigo-500/5 dark:to-pink-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-300/5 to-purple-300/5 dark:from-blue-400/3 dark:to-purple-400/3 rounded-full blur-3xl animate-pulse-slow"></div>
+    <div className="min-h-screen bg-gradient-to-b from-[#101018] via-[#050505] to-[#050505] text-white relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-48 -left-32 w-96 h-96 rounded-full bg-[#63a1ff] opacity-30 blur-[100px]" />
+        <div className="absolute -top-32 right-[-100px] w-[380px] h-[380px] rounded-full bg-[#ff79c6] opacity-30 blur-[120px]" />
+        <div className="absolute bottom-[-150px] left-1/2 -translate-x-1/2 w-[480px] h-[480px] rounded-full bg-[#78ffd6] opacity-20 blur-[130px]" />
       </div>
       
       <div className="relative z-10 min-h-screen flex flex-col">
-        {/* 头部导航栏 */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-white shadow-lg relative">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">个人中心</h1>
+        <div className="px-4 sm:px-8 pt-6 pb-4 flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="uppercase tracking-[0.42em] text-[11px] text-white/40">
+              Modern Account
+            </p>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-white">
+                个人中心
+              </h1>
+              <span className="hidden sm:inline text-xs text-white/45">
+                Profile &amp; Security Console
+              </span>
             </div>
-            <div className="flex items-center space-x-3">
-              <a 
-                href="https://www.andyjin.website"
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="hidden sm:inline-flex items-center justify-center px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors text-sm ml-2"
-                title="返回首页"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                <span className="hidden sm:inline ml-2">返回首页</span>
-              </a>
-              {isUserLoggedIn && currentUser && (
-                <div className="relative">
-                  <button
-                    onClick={toggleUserDetails}
-                    className="flex items-center space-x-3 hover:bg-white/10 rounded-lg px-3 py-2 transition-colors"
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isUserLoggedIn && user ? (
+              <div className="relative">
+                <button
+                  onClick={toggleUserDetails}
+                  className="flex items-center gap-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/15 px-3 py-1.5 transition-colors"
+                >
+                  <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
+                    <span className="text-xs font-semibold text-white">
+                      {user.username.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="hidden sm:flex flex-col text-left">
+                    <span className="text-[11px] text-white/60">已登录</span>
+                    <span className="text-xs text-white truncate max-w-[120px]">
+                      {user.username}
+                    </span>
+                  </div>
+                  <svg
+                    className={`w-3.5 h-3.5 text-white/70 transition-transform ${showUserDetails ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-semibold">{currentUser.username.charAt(0)}</span>
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-semibold">欢迎回来，{currentUser.username}</p>
-                      <p className="text-xs opacity-80">用户ID: {currentUser.userId}</p>
-                    </div>
-                    <svg 
-                      className={`w-4 h-4 transition-transform ${showUserDetails ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
 
-                  {/* 用户详细信息下拉面板 */}
-                  {showUserDetails && (
-                    <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50">
-                      <div className="p-6">
-                        <a
-                          href="https://www.andyjin.website"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="sm:hidden mb-4 inline-flex items-center px-3 py-2 rounded-lg border border-gray-200/60 dark:border-gray-700/60 bg-white/70 dark:bg-gray-700/40 text-gray-800 dark:text-gray-200 hover:bg-white/90 dark:hover:bg-gray-700 transition-colors text-sm"
-                          title="返回首页"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                          </svg>
-                          返回首页
-                        </a>
-
-                        {/* 用户基本信息 */}
-                        <div className="flex items-center space-x-4 mb-6">
-                          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                            {currentUser.username.charAt(0)}
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{currentUser.username}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{currentUser.email}</p>
-                          </div>
+                {/* 用户详细信息下拉面板（玻璃态） */}
+                {showUserDetails && (
+                  <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[#050509]/92 border border-white/12 shadow-[0_26px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden z-50">
+                    <div className="px-5 pt-4 pb-3 border-b border-white/10 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/90 to-white/60 text-[#050505] flex items-center justify-center text-sm font-semibold">
+                          {user.username.charAt(0)}
                         </div>
-
-                        {/* 详细信息列表 */}
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">用户ID</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">{currentUser.userId}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">当前版本</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">{currentUser.currentVersion}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">账户状态</span>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              currentUser.status === 'active' 
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                            }`}>
-                              {currentUser.status === 'active' ? '活跃' : '非活跃'}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">最后登录</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {currentUser.lastLoginAt ? new Date(currentUser.lastLoginAt).toLocaleString('zh-CN') : '未知'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center py-2">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">注册时间</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleString('zh-CN') : '未知'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* 退出登录按钮 */}
-                        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
-                          <button
-                            onClick={handleLogout}
-                            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-                          >
-                            退出登录
-                          </button>
+                        <div>
+                          <p className="text-sm text-white font-medium">{user.username}</p>
+                          <p className="text-[11px] text-white/55 truncate max-w-[160px]">{user.email}</p>
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    <div className="px-5 py-4 space-y-2 text-[12px] text-white/75">
+                      <div className="flex justify-between items-center py-1.5 border-b border-white/8">
+                        <span className="text-white/55">用户 ID</span>
+                        <span className="font-mono text-[11px] text-white/90 truncate max-w-[180px]">
+                          {user.userId}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5 border-b border-white/8">
+                        <span className="text-white/55">当前版本</span>
+                        <span className="text-white/90">新版账号</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5 border-b border-white/8">
+                        <span className="text-white/55">账户状态</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[11px] ${
+                            user.status === 'active'
+                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/40'
+                              : 'bg-rose-500/15 text-rose-300 border border-rose-400/40'
+                          }`}
+                        >
+                          {user.status === 'active' ? '活跃' : '非活跃'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5">
+                        <span className="text-white/55">最后登录</span>
+                        <span className="text-white/85">
+                          {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('zh-CN') : '未知'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1.5">
+                        <span className="text-white/55">注册时间</span>
+                        <span className="text-white/85">
+                          {user.createdAt ? new Date(user.createdAt).toLocaleString('zh-CN') : '未知'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="px-5 py-3 border-t border-white/10">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full rounded-xl bg-white text-[#050505] py-2.5 text-[13px] font-medium hover:bg-white/92 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)]"
+                      >
+                        退出登录
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => router.push('/auth')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/18 px-3 py-1.5 text-[11px] text-white/80 hover:text-white hover:bg-white/5 transition"
+              >
+                <span>前往登录</span>
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="flex-1 p-6 max-w-4xl mx-auto w-full">
+        <div className="flex-1 px-4 sm:px-6 pb-32 pt-2 max-w-5xl mx-auto w-full">
           {!isUserLoggedIn ? (
-            /* 登录页面 */
-            <div className="flex items-center justify-center min-h-[70vh]">
-              <div className="w-full max-w-md">
-                <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 dark:border-gray-700/20">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">欢迎登录</h2>
-                    <p className="text-gray-600 dark:text-gray-400 mt-2">请输入您的账户信息</p>
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="w-full max-w-md rounded-3xl bg-[#050509]/88 border border-white/10 backdrop-blur-2xl shadow-[0_32px_80px_rgba(0,0,0,0.9)] px-8 py-9 text-center space-y-6">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-[#63a1ff] to-[#ff79c6] flex items-center justify-center shadow-[0_18px_40px_rgba(0,0,0,0.8)]">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-semibold text-white">需要登录</h2>
+                  <p className="mt-2 text-sm text-white/65">
+                    {isUserLoading ? '正在检测您的登录状态，请稍候…' : '登录状态已失效，请前往新版账号系统重新登录。'}
+                  </p>
+                </div>
+                {error && (
+                  <div className="text-sm text-rose-300 bg-rose-900/20 border border-rose-700/50 px-4 py-3 rounded-2xl">
+                    {error}
                   </div>
-
-                  <form onSubmit={handleLogin} className="space-y-6">
-                    <div>
-                      <label htmlFor="userId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        用户ID
-                      </label>
-                      <input
-                        type="text"
-                        id="userId"
-                        value={userId}
-                        onChange={(e) => setUserId(e.target.value)}
-                        placeholder="请输入用户ID"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        邮箱
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="请输入邮箱"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
-                        required
-                      />
-                    </div>
-
-                    {error && (
-                      <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
-                        {error}
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      {isLoading ? (
-                        <div className="flex items-center justify-center">
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          登录中...
-                        </div>
-                      ) : (
-                        '立即登录'
-                      )}
-                    </button>
-                  </form>
-
-                  {/* 新版引导卡片（小巧简洁） */}
-                  <div className="mt-6 rounded-2xl border border-white/30 bg-white/60 dark:bg-white/5 backdrop-blur p-5 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="shrink-0 h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">新版登录已上线</h3>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setIsNewFeatureOpen(true)}
-                              className="inline-flex items-center rounded-lg bg-white text-blue-600 px-3 py-1.5 text-xs font-medium border border-blue-200 hover:bg-blue-50 dark:bg-transparent dark:text-blue-300 dark:border-blue-500/40 dark:hover:bg-blue-500/10 transition"
-                            >
-                              了解新版特性
-                            </button>
-                            <Link
-                              href="/auth"
-                              className="inline-flex items-center rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-medium hover:bg-blue-700 transition"
-                            >
-                              前往新版
-                            </Link>
-                          </div>
-                        </div>
-                        <p className="mt-1.5 text-xs leading-5 text-gray-600 dark:text-gray-300">
-                          更佳视觉体验，建议使用新版登录。
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                )}
+                <div className="space-y-3">
+                  <button
+                    onClick={() => router.push('/auth')}
+                    className="w-full bg-white text-[#050505] py-3 px-4 rounded-2xl text-sm font-medium hover:bg-white/90 shadow-[0_22px_60px_-28px_rgba(255,255,255,0.95)] transition"
+                  >
+                    前往登录
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewFeatureOpen(true)}
+                    className="w-full inline-flex items-center justify-center rounded-2xl bg-white/5 text-white/85 px-4 py-2.5 text-xs font-medium border border-white/15 hover:bg-white/8 transition"
+                  >
+                    了解新版特性
+                  </button>
                 </div>
               </div>
             </div>
@@ -483,28 +320,28 @@ export default function ProfilePage() {
             <div className="space-y-6">
 
               {/* 密钥管家模块 */}
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl p-6 border border-white/20 dark:border-gray-700/20 hover:shadow-lg transition-all duration-300 hover:scale-[1.01] cursor-pointer">
+              <div className="rounded-3xl bg-[#050509]/78 border border-white/10 backdrop-blur-2xl px-6 py-5 sm:px-7 sm:py-6 shadow-[0_26px_70px_rgba(0,0,0,0.85)] hover:shadow-[0_30px_80px_rgba(0,0,0,0.95)] transition-all duration-300 hover:-translate-y-0.5 cursor-pointer">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#63a1ff]/18 to-[#78ffd6]/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">密钥管家</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">通过独立密钥调用用户存储的所有密钥，实现安全统一管理</p>
+                    <h3 className="text-base sm:text-lg font-medium text-white mb-1.5">密钥管家</h3>
+                    <p className="text-xs sm:text-sm text-white/60">通过独立密钥调用用户存储的所有密钥，实现安全统一管理</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button 
                       onClick={() => setIsKeyModalOpen(true)}
-                      disabled={!currentUser?.userId}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                      disabled={!user?.userId}
+                      className="px-4 py-2 rounded-2xl bg-white text-[#050505] text-xs sm:text-sm font-medium hover:bg-white/90 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)] disabled:opacity-40 disabled:cursor-not-allowed transition"
                     >
                       管理
                     </button>
                     <button
                       onClick={() => setShowPrivacyModal(true)}
-                      className="px-4 py-2 bg-white/70 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-white/90 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+                      className="px-4 py-2 rounded-2xl bg-white/5 text-white/80 text-xs sm:text-sm font-medium border border-white/20 hover:bg-white/10 transition"
                     >
                       隐私协议
                     </button>
@@ -513,21 +350,21 @@ export default function ProfilePage() {
               </div>
 
               {/* 系统维护模块 */}
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl p-6 border border-white/20 dark:border-gray-700/20 hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">
+              <div className="rounded-3xl bg-[#050509]/78 border border-white/10 backdrop-blur-2xl px-6 py-5 sm:px-7 sm:py-6 shadow-[0_26px_70px_rgba(0,0,0,0.85)] hover:shadow-[0_30px_80px_rgba(0,0,0,0.95)] transition-all duration-300 hover:-translate-y-0.5">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/25 to-orange-500/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">系统维护</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">清除缓存、重置登录状态，解决账号显示问题</p>
+                    <h3 className="text-base sm:text-lg font-medium text-white mb-1.5">系统维护</h3>
+                    <p className="text-xs sm:text-sm text-white/65">清除缓存、重置登录状态，解决账号显示问题</p>
                   </div>
                   <button 
                     onClick={clearCache}
-                    className="px-4 py-2 bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/30 transition-colors text-sm font-medium"
+                    className="px-4 py-2 rounded-2xl bg-amber-400/15 text-amber-100 text-xs sm:text-sm font-medium border border-amber-300/40 hover:bg-amber-400/25 transition"
                   >
                     清除缓存
                   </button>
@@ -535,25 +372,31 @@ export default function ProfilePage() {
               </div>
 
               {/* MFA 设置模块 */}
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl p-6 border border-white/20 dark:border-gray-700/20 hover:shadow-lg transition-all duration-300">
+              <div className="rounded-3xl bg-[#050509]/78 border border-white/10 backdrop-blur-2xl px-6 py-5 sm:px-7 sm:py-6 shadow-[0_26px_70px_rgba(0,0,0,0.85)] hover:shadow-[0_30px_80px_rgba(0,0,0,0.95)] transition-all duration-300">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-violet-100 dark:bg-violet-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400/25 to-indigo-500/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-violet-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11zM19 20a7 7 0 10-14 0h14z" />
                     </svg>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">多因素认证（MFA）</h3>
+                        <h3 className="text-base sm:text-lg font-medium text-white">多因素认证（MFA）</h3>
                         {mfaEnabled !== null && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full border ${mfaEnabled ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/40' : 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-700/40'}`}>
+                          <span className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                            mfaEnabled
+                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/40'
+                              : 'bg-white/5 text-white/70 border-white/20'
+                          }`}>
                             {mfaEnabled ? '已启用' : '未启用'}
                           </span>
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">启用后可以提升账户安全性,通过多重验证机制有效防止未授权访问,降低数据泄露风险。</p>
+                    <p className="text-xs sm:text-sm text-white/65 mt-1">
+                      启用后可以提升账户安全性，通过多重验证机制有效防止未授权访问，降低数据泄露风险。
+                    </p>
 
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-3">
@@ -580,7 +423,7 @@ export default function ProfilePage() {
                               setMfaMsg(e.message || '网络错误')
                             }
                           }}
-                          className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm"
+                          className="px-4 py-2 rounded-2xl bg-white text-[#050505] text-xs sm:text-sm font-medium hover:bg-white/90 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)]"
                         >
                           去开启
                         </button>
@@ -591,7 +434,7 @@ export default function ProfilePage() {
                             setMfaDisableModalCode('')
                             setIsMfaDisableModalOpen(true)
                           }}
-                          className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-sm"
+                          className="px-4 py-2 rounded-2xl bg-white/6 text-white/85 text-xs sm:text-sm hover:bg-white/10 transition"
                         >
                           去关闭
                         </button>
@@ -608,23 +451,23 @@ export default function ProfilePage() {
               {/* 开启MFA弹窗：二维码 + 验证码输入 */}
               {isMfaEnableModalOpen && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-                  <div className="absolute inset-0 bg-black/40" onClick={() => setIsMfaEnableModalOpen(false)} />
-                  <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">开启多因素认证</h3>
-                      <button onClick={() => setIsMfaEnableModalOpen(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">
+                  <div className="absolute inset-0 bg-black/60" onClick={() => setIsMfaEnableModalOpen(false)} />
+                  <div className="relative w-full max-w-md rounded-[28px] bg-[#050509]/92 border border-white/12 shadow-[0_32px_80px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+                      <h3 className="text-sm font-semibold text-white">开启多因素认证</h3>
+                      <button onClick={() => setIsMfaEnableModalOpen(false)} className="text-white/60 hover:text-white">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
-                    <div className="px-5 py-4 space-y-4">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">使用认证器App（Google/Microsoft 等）扫描二维码完成绑定，然后输入当期6位验证码完成开启。</p>
+                    <div className="px-5 py-4 space-y-4 text-white/80 text-sm">
+                      <p className="text-xs text-white/70">使用认证器 App（Google Authenticator、Microsoft Authenticator 等）扫描二维码完成绑定，然后输入当期 6 位验证码完成开启。</p>
                       <div className="flex items-center justify-center">
-                        <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-white p-2">
-                          {mfaOtpauth ? <QRCodeSVG value={mfaOtpauth} size={180} includeMargin={true} /> : <div className="text-xs text-gray-500">加载二维码...</div>}
+                        <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
+                          {mfaOtpauth ? <QRCodeSVG value={mfaOtpauth} size={180} includeMargin={true} /> : <div className="text-xs text-white/60">加载二维码...</div>}
                         </div>
                       </div>
-                      <div>
-                        <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">输入6位验证码</label>
+                      <div className="space-y-2 text-xs">
+                        <label className="block text-white/70">输入 6 位验证码</label>
                         <input
                           inputMode="numeric"
                           pattern="^[0-9]{6}$"
@@ -632,12 +475,14 @@ export default function ProfilePage() {
                           autoComplete="one-time-code"
                           value={mfaEnableModalCode}
                           onChange={(e) => setMfaEnableModalCode(e.target.value.replace(/[^0-9]/g, ''))}
-                          placeholder="123456"
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+                          placeholder=""
+                          className="w-full px-3 py-2 rounded-2xl border border-white/20 bg-white/5 text-sm text-white tracking-[0.35em] placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                         />
                       </div>
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setIsMfaEnableModalOpen(false)} className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">取消</button>
+                      <div className="flex justify-end gap-2 text-xs">
+                        <button onClick={() => setIsMfaEnableModalOpen(false)} className="px-3 py-2 rounded-2xl border border-white/15 text-white/70 hover:bg-white/5 hover:text-white transition">
+                          取消
+                        </button>
                         <button
                           disabled={mfaEnableModalCode.length !== 6}
                           onClick={async () => {
@@ -659,7 +504,7 @@ export default function ProfilePage() {
                               setMfaMsg(e.message || '网络错误')
                             }
                           }}
-                          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm disabled:opacity-50"
+                          className="px-4 py-2 rounded-2xl bg-white text-[#050505] text-xs font-medium hover:bg-white/90 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)] disabled:opacity-40 disabled:cursor-not-allowed transition"
                         >
                           确认开启
                         </button>
@@ -672,18 +517,18 @@ export default function ProfilePage() {
               {/* 关闭MFA弹窗：验证码输入 */}
               {isMfaDisableModalOpen && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-                  <div className="absolute inset-0 bg-black/40" onClick={() => setIsMfaDisableModalOpen(false)} />
-                  <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">关闭多因素认证</h3>
-                      <button onClick={() => setIsMfaDisableModalOpen(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">
+                  <div className="absolute inset-0 bg-black/60" onClick={() => setIsMfaDisableModalOpen(false)} />
+                  <div className="relative w-full max-w-md rounded-[28px] bg-[#050509]/92 border border-white/12 shadow-[0_32px_80px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+                      <h3 className="text-sm font-semibold text-white">关闭多因素认证</h3>
+                      <button onClick={() => setIsMfaDisableModalOpen(false)} className="text-white/60 hover:text-white">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
-                    <div className="px-5 py-4 space-y-4">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">请输入当前时间步内认证器显示的6位验证码以关闭MFA。</p>
-                      <div>
-                        <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">输入6位验证码</label>
+                    <div className="px-5 py-4 space-y-4 text-white/80 text-sm">
+                      <p className="text-xs text-white/70">请输入当前时间步内认证器显示的 6 位验证码以关闭 MFA。</p>
+                      <div className="space-y-2 text-xs">
+                        <label className="block text-white/70">输入 6 位验证码</label>
                         <input
                           inputMode="numeric"
                           pattern="^[0-9]{6}$"
@@ -691,12 +536,14 @@ export default function ProfilePage() {
                           autoComplete="one-time-code"
                           value={mfaDisableModalCode}
                           onChange={(e) => setMfaDisableModalCode(e.target.value.replace(/[^0-9]/g, ''))}
-                          placeholder="123456"
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
+                          placeholder=""
+                          className="w-full px-3 py-2 rounded-2xl border border-white/20 bg-white/5 text-sm text-white tracking-[0.35em] placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                         />
                       </div>
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setIsMfaDisableModalOpen(false)} className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">取消</button>
+                      <div className="flex justify-end gap-2 text-xs">
+                        <button onClick={() => setIsMfaDisableModalOpen(false)} className="px-3 py-2 rounded-2xl border border-white/15 text-white/70 hover:bg-white/5 hover:text-white transition">
+                          取消
+                        </button>
                         <button
                           disabled={mfaDisableModalCode.length !== 6}
                           onClick={async () => {
@@ -718,7 +565,7 @@ export default function ProfilePage() {
                               setMfaMsg(e.message || '网络错误')
                             }
                           }}
-                          className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 text-sm disabled:opacity-50"
+                          className="px-4 py-2 rounded-2xl bg-white text-[#050505] text-xs font-medium hover:bg-white/90 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)] disabled:opacity-40 disabled:cursor-not-allowed transition"
                         >
                           确认关闭
                         </button>
@@ -766,18 +613,19 @@ export default function ProfilePage() {
       <KeyManagerModal
         isOpen={isKeyModalOpen}
         onClose={() => setIsKeyModalOpen(false)}
-        userId={currentUser?.userId || ''}
+        userId={user?.userId || ''}
       />
 
       {/* 隐私协议弹窗 */}
       {showPrivacyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">密钥管家隐私协议</h3>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowPrivacyModal(false)} />
+          <div className="relative w-full max-w-2xl max-h-[85vh] rounded-[32px] bg-[#050509]/95 border border-white/12 shadow-[0_36px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <h3 className="text-lg font-semibold text-white">密钥管家隐私协议</h3>
               <button
                 onClick={() => setShowPrivacyModal(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                className="text-white/70 hover:text-white"
                 aria-label="关闭"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -785,11 +633,11 @@ export default function ProfilePage() {
                 </svg>
               </button>
             </div>
-            <div className="px-6 py-4 overflow-y-auto space-y-4 text-sm text-gray-700 dark:text-gray-300">
-              <p>
+            <div className="px-6 py-5 overflow-y-auto space-y-4 text-sm text-white/80">
+              <p className="text-white/85">
                 为保障您的数据安全与隐私，我们对“密钥管家”功能的数据处理方式做出如下说明：
               </p>
-              <ul className="list-disc pl-5 space-y-2">
+              <ul className="list-disc pl-5 space-y-2 text-white/70">
                 <li>我们仅在提供 MyBlog 与 Modern Blog 移动应用中的 AI 服务所必需的范围内收集与使用您提供的信息。</li>
                 <li>我们会对您提供的 API Key 进行加密存储，不以明文保存与传输。</li>
                 <li>当您从客户端请求密钥管家存储的数据时，我们会进行必要的身份核验，确保仅密钥所有者可以获取其数据。</li>
@@ -799,14 +647,14 @@ export default function ProfilePage() {
                 <li>我们会在实现功能所需且符合法律要求的期限内保存您的信息，并在超过期限后及时删除或匿名化处理。</li>
                 <li>请妥善保管与账户相关的凭据，不要在公共环境中泄露。</li>
               </ul>
-              <p>
+              <p className="text-white/85">
                 如您继续使用“密钥管家”，即表示您已阅读并同意本隐私说明。
               </p>
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+            <div className="px-6 py-4 border-t border-white/10 flex justify-end">
               <button
                 onClick={() => setShowPrivacyModal(false)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                className="px-5 py-2.5 rounded-2xl bg-white text-[#050505] text-sm font-medium hover:bg-white/90 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)]"
               >
                 我已了解
               </button>
@@ -818,47 +666,39 @@ export default function ProfilePage() {
       {/* 新版特性弹窗 */}
       {isNewFeatureOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsNewFeatureOpen(false)} />
-          <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">新版特性</h3>
+          <div className="absolute inset-0 bg-black/60" onClick={() => setIsNewFeatureOpen(false)} />
+          <div className="relative w-full max-w-md rounded-[28px] bg-[#050509]/92 border border-white/12 shadow-[0_32px_80px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <h3 className="text-sm font-semibold text-white">新版特性</h3>
               <button
                 type="button"
                 onClick={() => setIsNewFeatureOpen(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                className="text-white/70 hover:text-white"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="px-5 py-4 text-sm text-gray-700 dark:text-gray-200 space-y-3">
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
-                <p>支持在网页端注册账号，流程清晰，上手更快</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
-                <p>更安全的注册与登录机制，显著降低用户数据泄露风险</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
-                <p>注册时可设置用户名、密码与邮箱，扩展用户信息维度</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
-                <p>不记录邮箱、密码等敏感信息；所有关键数据均加密存储</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-600" />
-                <p>更佳的视觉与交互体验，整体操作更顺畅</p>
-              </div>
+            <div className="px-5 py-4 text-sm text-white/80 space-y-3">
+              {[
+                '支持在网页端注册账号，流程清晰，上手更快',
+                '更安全的注册与登录机制，显著降低用户数据泄露风险',
+                '注册时可设置用户名、密码与邮箱，扩展用户信息维度',
+                '不记录邮箱、密码等敏感信息；所有关键数据均加密存储',
+                '更佳的视觉与交互体验，整体操作更顺畅'
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
+                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-white/70" />
+                  <p>{item}</p>
+                </div>
+              ))}
             </div>
-            <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+            <div className="px-5 py-3 border-t border-white/10 flex justify-end">
               <button
                 type="button"
                 onClick={() => setIsNewFeatureOpen(false)}
-                className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700"
+                className="rounded-2xl bg-white text-[#050505] px-4 py-2 text-sm font-medium hover:bg-white/90 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)]"
               >
                 我已了解
               </button>
@@ -867,7 +707,35 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <ProfileFooter />
+      <div className="pointer-events-none fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-30 w-full px-3">
+        <div className="pointer-events-auto mx-auto w-full max-w-[540px] px-4 sm:px-6 py-2 sm:py-3 rounded-[999px] bg-black/35 border border-white/14 shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-2xl flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-between gap-2 sm:gap-4 text-[11px] sm:text-[13px] text-white/80">
+          <span className="w-full sm:w-auto text-center sm:text-left text-white/70">
+            Modern Account · Built by AndyJin
+          </span>
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="w-[150px]">
+              <iframe
+                src="https://status.andyjin.website/badge?theme=system"
+                width="150"
+                height="24"
+                frameBorder="0"
+                scrolling="no"
+                style={{ colorScheme: 'normal', width: '100%', height: '24px' }}
+              ></iframe>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="inline-flex items-center gap-1.5 text-white hover:text-white font-medium whitespace-nowrap"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span>返回首页</span>
+          </button>
+        </div>
+      </div>
     </div>
   )
 } 
