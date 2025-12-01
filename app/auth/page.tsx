@@ -185,6 +185,15 @@ export default function AuthPage() {
       })
       const data = await res.json()
       if (!res.ok) {
+        if (res.status === 409) {
+          const message = String(data?.message || '').toLowerCase()
+          if (message.includes('username')) {
+            throw new Error('这个用户名已被使用，换一个更有个性的吧')
+          }
+          if (message.includes('email')) {
+            throw new Error('该邮箱已经注册，换个邮箱或直接去登录试试')
+          }
+        }
         throw new Error(data.message || '注册失败')
       }
 
