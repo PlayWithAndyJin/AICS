@@ -2,12 +2,11 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import { UserProvider } from '@/contexts/UserContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Modern Blog 客服',
+  title: 'Modern Support',
   description: '基于AI的智能客户服务系统',
 }
 
@@ -23,9 +22,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} gradient-bg min-h-screen`}>
         <ThemeProvider>
-          <UserProvider>
           {children}
-          </UserProvider>
         </ThemeProvider>
       </body>
     </html>
