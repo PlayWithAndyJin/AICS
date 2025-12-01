@@ -2,17 +2,35 @@
 
 import { useEffect, useState } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
-import { useUser } from '@/contexts/UserContext'
-import { performLogout, isNewAuthSystem } from '@/lib/auth'
+import { performLogout } from '@/lib/auth'
+import { fetchUserInfo, type UserData } from '@/lib/tokenManager'
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
 
-  const { theme, setTheme, resolvedTheme } = useTheme()
-  const { user, isLoggedIn, logout } = useUser()
+  const { theme, setTheme } = useTheme()
+  const [user, setUser] = useState<UserData | null>(null)
+  const isLoggedIn = Boolean(user)
 
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem('user')
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser)
+        setUser(parsed)
+      }
+    } catch {
+      localStorage.removeItem('user')
+    }
 
+    const loadUser = async () => {
+      const userData = await fetchUserInfo()
+      if (userData) setUser(userData)
+    }
+
+    loadUser()
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -83,19 +101,10 @@ export default function Header() {
   }
 
   const handleLogout = async () => {
-    const result = await performLogout()
-    
-    // 如果是旧认证系统，还需要调用 context 的 logout 函数
-    if (!isNewAuthSystem()) {
-      logout()
-    }
-    
+    await performLogout()
+    setUser(null)
     setShowUserMenu(false)
-    
-    // 可选：显示退出登录结果消息
-    if (result.message) {
-      console.log(result.message)
-    }
+    window.location.href = '/auth'
   }
 
 
@@ -277,9 +286,9 @@ export default function Header() {
 
             {!isLoggedIn && (
               <a 
-                href="/profile" 
+                href="/auth" 
                 className="p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
-                title="个人中心"
+                title="前往登录"
               >
                 <svg className="w-5 h-5 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
