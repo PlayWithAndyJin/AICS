@@ -383,126 +383,129 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-          {/* 标题和关闭按钮 */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">密钥管家</h2>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+        <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] bg-[#050509]/94 border border-white/12 shadow-[0_40px_120px_rgba(0,0,0,0.85)] backdrop-blur-2xl text-white px-6 py-7 space-y-6">
+          {/* 标题 */}
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.4em] text-white/45">Key Manager</p>
+              <h2 className="text-2xl font-semibold mt-2">密钥管家</h2>
+              <p className="text-sm text-white/60 mt-1">集中管理三方模型 API Key，统一加密存储。</p>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="rounded-full bg-white/5 hover:bg-white/10 border border-white/15 p-2 text-white/70 hover:text-white transition"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
           {uniqueKey && (
-            <div className="mb-6">
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                <label className="block text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                  您的唯一密钥
-                </label>
-                <div className="flex items-center space-x-2">
-                  <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 rounded border text-sm font-mono text-green-900 dark:text-green-100 break-all">
-                    {uniqueKey}
-                  </code>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(uniqueKey)
-                        setCopied(true)
-                        setTimeout(() => setCopied(false), 1500)
-                      } catch (e) {
-                        setCopied(false)
-                      }
-                    }}
-                    className={`px-3 py-2 rounded text-sm transition-colors ${copied ? 'bg-green-600 text-white' : 'text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800'}`}
-                    title={copied ? '已复制' : '复制密钥'}
-                  >
-                    {copied ? '已复制' : '复制'}
-                  </button>
-                </div>
+            <div className="rounded-2xl border border-white/12 bg-white/5 p-4 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/70">您的唯一密钥</span>
                 {!uniqueKey.match(/^KMUK-[A-Z0-9]{8}-SFFU$/) && (
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                    ❌ 格式验证: 格式错误，请联系管理员或开发者！
-                  </p>
+                  <span className="text-xs text-rose-300">格式异常</span>
                 )}
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                  请妥善保管您的唯一密钥，它将用于安全获取您的大模型API密钥。
-                </p>
               </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 rounded-2xl border border-white/10 bg-black/30 text-sm font-mono text-white break-all">
+                  {uniqueKey}
+                </code>
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(uniqueKey)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 1500)
+                    } catch (e) {
+                      setCopied(false)
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-2xl text-xs font-medium transition ${
+                    copied ? 'bg-white text-[#050505]' : 'border border-white/20 text-white/80 hover:bg-white/10'
+                  }`}
+                >
+                  {copied ? '已复制' : '复制'}
+                </button>
+              </div>
+              <p className="text-xs text-white/55">
+                唯一密钥仅用于在服务器侧加密/解密您的 API Key，请妥善保管。
+              </p>
             </div>
           )}
 
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              💡 <strong>使用说明：</strong>大模型API需要API Key，请从各平台获取您的API Key并填入对应字段。
-            </p>
+          <div className="rounded-2xl border border-white/10 bg-white/3 p-4 text-sm text-white/70">
+            💡 <span className="font-medium text-white/80">使用说明：</span>从各平台控制台复制 API Key，粘贴到对应品牌后保存，全程加密传输。
           </div>
-          
-          <div className="space-y-4">
+
+          <div className="space-y-5">
             {BRANDS.map((brand) => (
-              <div key={brand.key}>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {brand.name}
-                </label>
-                <div className="flex space-x-2">
+              <div key={brand.key} className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/85 font-medium">{brand.name}</span>
+                  {savedKeys.has(brand.key) && (
+                    <span className="text-xs text-emerald-300/80">已保存</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="API Key (选填)"
                     value={savedKeys.has(brand.key) ? '••••••••••••••' : keys[brand.key]}
                     onChange={(e) => handleInputChange(brand.key, e.target.value)}
                     disabled={savedKeys.has(brand.key)}
-                    className={`flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
+                    className={`flex-1 px-4 py-3 rounded-2xl border border-white/15 bg-white/5 text-sm text-white placeholder-white/35 focus:outline-none focus:ring-2 focus:ring-white/25 ${
                       savedKeys.has(brand.key) ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   />
-                  {savedKeys.has(brand.key) ? (
-                    <div className="flex space-x-1">
+                  {savedKeys.has(brand.key) && (
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleUpdateBrand(brand)}
-                        className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm whitespace-nowrap"
+                        className="px-4 py-2 rounded-2xl bg-white text-[#050505] text-xs font-medium hover:bg-white/90 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)]"
                       >
                         更新
                       </button>
                       <button
                         onClick={() => handleDeleteApiKey(brand)}
-                        className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm whitespace-nowrap"
+                        className="px-4 py-2 rounded-2xl border border-white/20 text-white/80 text-xs font-medium hover:bg-white/10 transition"
                       >
                         删除
                       </button>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* 消息提示 */}
           {message && (
-            <div className={`mt-4 p-3 rounded-md text-sm ${
-              message.includes('成功') 
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
-            }`}>
+            <div
+              className={`mt-4 px-4 py-3 rounded-2xl text-sm border ${
+                message.includes('成功')
+                  ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
+                  : 'border-rose-400/40 bg-rose-500/10 text-rose-200'
+              }`}
+            >
               {message}
             </div>
           )}
 
-          {/* 操作按钮 */}
-          <div className="flex space-x-3 mt-6">
+          <div className="flex gap-3 pt-2">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="flex-1 px-4 py-3 rounded-2xl border border-white/18 text-white/80 text-sm font-medium hover:bg-white/8 transition"
             >
               取消
             </button>
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-3 rounded-2xl bg-white text-[#050505] text-sm font-semibold hover:bg-white/90 shadow-[0_22px_60px_-28px_rgba(255,255,255,0.95)] disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               {isLoading ? '保存中...' : '保存'}
             </button>
@@ -510,48 +513,47 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
         </div>
       </div>
 
-      {/* 更新API密钥弹窗 */}
       {showUpdateModal && selectedBrand && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                更新 {selectedBrand.name} API密钥
-              </h3>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowUpdateModal(false)} />
+          <div className="relative w-full max-w-md rounded-[28px] bg-[#050509]/94 border border-white/12 shadow-[0_32px_80px_rgba(0,0,0,0.85)] backdrop-blur-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-white/60 uppercase tracking-[0.3em]">Update Key</p>
+                <h3 className="text-lg font-semibold text-white mt-1">更新 {selectedBrand.name} API 密钥</h3>
+              </div>
               <button
                 onClick={() => setShowUpdateModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="rounded-full bg-white/5 hover:bg白/10 border border白/15 p-2 text白/70 hover:text白 transition"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                新的API密钥
-              </label>
+            <div className="space-y-2 text-sm">
+              <label className="text-white/75">新的 API Key</label>
               <input
                 type="text"
-                placeholder="请输入新的API密钥"
+                placeholder="请输入新的 API Key"
                 value={newApiKey}
                 onChange={(e) => setNewApiKey(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full px-4 py-3 rounded-2xl border border-white/15 bg-white/5 text-white placeholder-white/35 focus:outline-none focus:ring-2 focus:ring-white/25"
               />
             </div>
 
-            <div className="flex space-x-3">
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setShowUpdateModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="flex-1 px-4 py-3 rounded-2xl border border-white/18 text-white/80 text-sm font-medium hover:bg-white/8 transition"
               >
                 取消
               </button>
               <button
                 onClick={handleUpdateApiKey}
                 disabled={isUpdating || !newApiKey.trim()}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-3 rounded-2xl bg-white text-[#050505] text-sm font-semibold hover:bg-white/90 shadow-[0_18px_40px_-26px_rgba(255,255,255,0.95)] disabled:opacity-40 disabled:cursor-not-allowed transition"
               >
                 {isUpdating ? '更新中...' : '更新'}
               </button>
@@ -559,8 +561,6 @@ export default function KeyManagerModal({ isOpen, onClose, userId }: KeyManagerM
           </div>
         </div>
       )}
-
-      {/* 注意：解密弹窗已移除，唯一密钥现在由服务端直接返回解密后的值 */}
     </>
   )
 } 
