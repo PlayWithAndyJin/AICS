@@ -139,12 +139,7 @@ export default function FeedbackPage() {
       { value: '1.0.0', label: '1.0.0' }
     ],
     wechat: [
-      { value: '1.3.0', label: '1.3.0' },
-      { value: '1.2.0', label: '1.2.0' },
-      { value: '1.1.2', label: '1.1.2' },
-      { value: '1.1.1', label: '1.1.1' },
-      { value: '1.1.0', label: '1.1.0' },
-      { value: '1.0.0', label: '1.0.0' }
+      { value: '1.3.3', label: '1.3.3' },
     ],
     'user-service': [
       { value: 'current', label: '当前版本' }
