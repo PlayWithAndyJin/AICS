@@ -20,9 +20,24 @@ export async function GET(req: Request) {
     })
 
     const data = await response.json()
+    if (response.ok && (!data.uniqueKey || data.uniqueKey === '')) {
+      return NextResponse.json(
+        { error: '唯一密钥不存在或未为当前用户生成', statusCode: 404 },
+        { status: 404 }
+      )
+    }
+
     if (response.ok && data.uniqueKey) {
       try {
         const decryptedKey = decryptUniqueKey(data.uniqueKey)
+
+        if (!decryptedKey) {
+          return NextResponse.json(
+            { error: '解密后的唯一密钥为空，请重新生成', statusCode: 500 },
+            { status: 500 }
+          )
+        }
+
         data.uniqueKey = decryptedKey
       } catch (decryptError) {
         console.error('解密唯一密钥失败:', decryptError)
