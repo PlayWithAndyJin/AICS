@@ -17,7 +17,7 @@ export default function FeedbackPage() {
     specificPlatform: '',
     version: '',
     feature: '',
-    appVersion: 'Web版'
+    appVersion: '全平台反馈中心'
   })
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -73,7 +73,7 @@ export default function FeedbackPage() {
 
   // Modern Blog 系列应用的具体平台
   const modernBlogPlatforms = [
-    { value: 'website', label: '主站（My Modern Blog）' },
+    { value: 'website', label: '网页网站' },
     { value: 'android', label: 'Android版' },
     { value: 'macos', label: 'macOS版' },
     { value: 'windows', label: 'Windows版' },
@@ -109,12 +109,9 @@ export default function FeedbackPage() {
   // 平台版本数据
   const platformVersions = {
     website: [
-      { value: '2025-09-16', label: '2025-09-16' },
-      { value: '2025-07-26', label: '2025-07-26' },
-      { value: '2025-07-25', label: '2025-07-25' },
-      { value: '2025-07-24', label: '2025-07-24' },
-      { value: '2025-07-23', label: '2025-07-23' },
-      { value: '2025-07-22', label: '2025-07-22' }
+      { value: '1001', label: '旧版博客网站' },
+      { value: '2001', label: '博客网站(当前版本)' },
+      { value: '3001', label: '开发者工具与资源导航' }
     ],
     android: [
       { value: '4.6.100', label: '4.6.100' },
@@ -183,10 +180,10 @@ export default function FeedbackPage() {
        issues: [
          {
            title: '预览版申请问题',
-           description: '由于数据库进行了更新，目前主站(www.andyjin.website)的预览版申请功能暂未对接数据库，同时目前尚未处于测试周期，我们预计将在下一测试周期进行修复，敬请期待。',
-           status: '已知问题', // 可选：修复中、优化中、调查中、已知问题
+           description: '由于数据库进行了更新，目前旧版博客站(https://old-blog.andyjin.website)的预览版申请功能暂未对接数据库，同时目前尚未处于测试周期，我们预计将在下一测试周期进行修复，敬请期待。',
+           status: '调查中', // 可选：修复中、优化中、调查中、已知问题
            priority: 'low', // 可选：high、medium、low
-           expectedFix: '下一测试周期开启前，目前尚未确定下一测试周期的具体时间'
+           expectedFix: '目前由于博客站发生了变更，旧版本目前暂无持续维护计划'
          },
          {
           title: '微信小程序分享问题',
@@ -197,6 +194,19 @@ export default function FeedbackPage() {
         }
        ]
      },
+     {
+         category: 'application-features',
+         categoryName: '应用功能',
+         issues: [
+           {
+             title: '博客网站更新事项',
+             description: '针对博客网页网站访问和显示效率低的情况，对网站(具体指https://blog.andyjin.website)的整体框架进行重构，新的网站提供更实用更轻便的良好体验，旧的博客网站目前正常维护中，需要注意访问的网址有所改变。旧版的网址已经改为https://old-blog.andyjin.website，新版网站网址延续为https://blog.andyjin.website。请用户在反馈时尽量提供具体页面的链接以便我们进行查看与修复。',
+             status: '已知问题',
+             priority: 'low',
+             expectedFix: '修复完成'
+           }
+         ]
+       },
     
     // 用户账号管理相关已知问题
     // {
@@ -295,10 +305,10 @@ export default function FeedbackPage() {
       case 'website':
         return [
           { value: '博客浏览问题', label: '博客浏览问题', enabled: true },
-          { value: '教程查看问题', label: '教程查看问题', enabled: true },
-          { value: '项目展示问题', label: '项目展示问题', enabled: true },
-          { value: '工具库使用问题', label: '工具库使用问题', enabled: true },
-          { value: '预览版申请问题', label: '预览版申请问题', enabled: false },
+          { value: '教程查看问题(新版无此功能)', label: '教程查看问题(新版无此功能)', enabled: true },
+          { value: '项目展示问题(新版无此功能)', label: '项目展示问题(新版无此功能)', enabled: true },
+          { value: '工具库使用问题(仅开发者工具与资源导航可选)', label: '工具库使用问题(仅开发者工具与资源导航可选)', enabled: true },
+          { value: '预览版申请问题(新版无此功能)', label: '预览版申请问题(新版无此功能)', enabled: false },
           { value: '其他网站问题', label: '其他网站问题', enabled: true }
         ]
       case 'android':
